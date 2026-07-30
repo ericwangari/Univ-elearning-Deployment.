@@ -1,0 +1,7 @@
+scratch/
+config/hosting.local.php
+
+.npm-cache/
+.vercel-cli/
+.vercel/
+.tools/

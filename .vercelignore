@@ -1,0 +1,35 @@
+# Vercel deployment exclusions
+# Development & local files
+scratch/
+scratch_db_test.php
+hosting.local.php
+
+# Database dev files (not needed in deployment)
+database/seed.sql
+database/migration_fix_duplicates.sql
+database/infinityfree_patch.sql
+database/real_course_contents.sql
+univ_elearning_recovery.sql
+univ_elearning_recovery_v2.sql
+
+# Compressed archives
+phpmailer.zip
+phpmailer_extract/
+
+# Documentation (optional ??? remove these lines to keep docs deployed)
+CODEBASE_ANALYSIS.md
+UI_UX_IMPROVEMENTS.md
+DEPLOYMENT.md
+
+# Local config
+config/hosting.local.php
+.env
+
+# Platform-specific
+nixpacks.toml
+Procfile
+
+.npm-cache/
+.vercel-cli/
+.vercel/
+.tools/
