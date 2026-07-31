@@ -16,53 +16,112 @@ class AuthController {
         }
 
         $remembered_email = $_COOKIE['remembered_login'] ?? '';
+        $error = null;
+        $success_message = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                      || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
             $rawInput = trim($_POST['email'] ?? '');
-            $email = strtolower(preg_replace('/[^\x21-\x7E]/', '', $rawInput));
-            $password = trim($_POST['password'] ?? '');
+            // Strip hidden non-printable or zero-width spaces (\xA0)
+            $cleanInput = trim(preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $rawInput));
+            $password = $_POST['password'] ?? '';
 
-            // Try to find user by email or username
-            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE Email = ? OR Username = ? OR lower(Username) = ?");
-            $stmt->execute([$email, $rawInput, $email]);
-            $user = $stmt->fetch();
+            if (empty($cleanInput) || empty($password)) {
+                $error = "Please enter both email/username and password.";
+            } else {
+                // Try case-insensitive lookup by email or username
+                $stmt = $this->pdo->prepare("SELECT * FROM users WHERE lower(Email) = lower(?) OR lower(Username) = lower(?) LIMIT 1");
+                $stmt->execute([$cleanInput, $cleanInput]);
+                $user = $stmt->fetch();
 
-            if ($user && password_verify($password, $user['Password'])) {
-                if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
-                    if (!defined('SMTP_HOST') || SMTP_HOST === '') {
-                        try {
-                            $stmtFix = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
-                            $stmtFix->execute([$user['UserID']]);
-                            $user['EmailVerifiedAt'] = date('Y-m-d H:i:s');
-                        } catch (Exception $e) {
-                            error_log("Login auto-verify error: " . $e->getMessage());
+                if ($user && password_verify($password, $user['Password'])) {
+                    // Auto-verify email if SMTP host is not configured
+                    if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
+                        if (!defined('SMTP_HOST') || SMTP_HOST === '') {
+                            try {
+                                $stmtFix = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
+                                $stmtFix->execute([$user['UserID']]);
+                                $user['EmailVerifiedAt'] = date('Y-m-d H:i:s');
+                            } catch (Exception $e) {
+                                error_log("Login auto-verify error: " . $e->getMessage());
+                            }
                         }
                     }
-                }
 
-                if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
-                    $error = "Please verify your email address before signing in. Check your inbox for the OTP code.";
-                    $verification_email = $user['Email'];
-                } elseif ($user['Status'] === 'Pending') {
-                    $error = "Your account is currently waiting for admin approval. Please check back later.";
-                } elseif ($user['Status'] === 'Rejected') {
-                    $error = "Your account registration has been rejected. Please contact support.";
-                } else {
-                    $_SESSION['user_id'] = $user['UserID'];
-                    $_SESSION['username'] = $user['Username'];
-                    $_SESSION['user_type'] = $user['UserType'];
-
-                    if (!empty($_POST['remember_me'])) {
-                        setcookie('remembered_login', $email, time() + (30 * 24 * 60 * 60), '', '', false, true);
+                    if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
+                        $error = "Please verify your email address before signing in. Check your inbox for the OTP code.";
+                        $verification_email = $user['Email'];
+                    } elseif ($user['Status'] === 'Pending') {
+                        $error = "Your account is currently waiting for admin approval. Please check back later.";
+                    } elseif ($user['Status'] === 'Rejected') {
+                        $error = "Your account registration has been rejected. Please contact support.";
                     } else {
-                        setcookie('remembered_login', '', time() - 3600, '', '', false, true);
-                    }
+                        session_regenerate_id(true);
+                        $_SESSION['user_id'] = $user['UserID'];
+                        $_SESSION['username'] = $user['Username'];
+                        $_SESSION['user_type'] = $user['UserType'];
 
-                    header("Location: index.php?page=dashboard");
-                    exit;
+                        try {
+                            $stmtActive = $this->pdo->prepare("UPDATE users SET LastActiveAt = NOW() WHERE UserID = ?");
+                            $stmtActive->execute([$user['UserID']]);
+                        } catch (Exception $e) {
+                            // Column might be missing on legacy schemas
+                        }
+
+                        if (!empty($_POST['remember_me'])) {
+                            if (PHP_VERSION_ID >= 70300) {
+                                setcookie('remembered_login', $cleanInput, [
+                                    'expires' => time() + (30 * 24 * 60 * 60),
+                                    'path' => '/',
+                                    'httponly' => true,
+                                    'samesite' => 'Lax'
+                                ]);
+                            } else {
+                                setcookie('remembered_login', $cleanInput, time() + (30 * 24 * 60 * 60), '/', '', false, true);
+                            }
+                        } else {
+                            if (PHP_VERSION_ID >= 70300) {
+                                setcookie('remembered_login', '', [
+                                    'expires' => time() - 3600,
+                                    'path' => '/',
+                                    'httponly' => true,
+                                    'samesite' => 'Lax'
+                                ]);
+                            } else {
+                                setcookie('remembered_login', '', time() - 3600, '/', '', false, true);
+                            }
+                        }
+
+                        $redirectTarget = $_SESSION['return_to'] ?? $_GET['return_to'] ?? $_POST['return_to'] ?? 'index.php?page=dashboard';
+                        unset($_SESSION['return_to']);
+                        if (strpos($redirectTarget, 'http://') === 0 || strpos($redirectTarget, 'https://') === 0 || strpos($redirectTarget, '//') === 0) {
+                            $redirectTarget = 'index.php?page=dashboard';
+                        }
+
+                        if ($isAjax) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => true, 'redirect' => $redirectTarget]);
+                            exit;
+                        }
+
+                        header("Location: " . $redirectTarget);
+                        exit;
+                    }
+                } else {
+                    $error = "Invalid email/username or password";
                 }
-            } else {
-                $error = "Invalid email/username or password";
+            }
+
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'error' => $error,
+                    'verification_email' => $verification_email ?? null
+                ]);
+                exit;
             }
         }
 

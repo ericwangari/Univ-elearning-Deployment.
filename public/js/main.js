@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form Validation logic
-    const forms = document.querySelectorAll('.needs-validation');
+    const forms = document.querySelectorAll('.needs-validation:not(#loginForm)');
     Array.prototype.slice.call(forms).forEach(function (form) {
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
@@ -22,6 +22,93 @@ document.addEventListener('DOMContentLoaded', function() {
             form.classList.add('was-validated');
         }, false);
     });
+
+    // Password visibility toggle
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('passwordInput');
+    const toggleIcon = document.getElementById('togglePasswordIcon');
+
+    if (togglePassword && passwordInput && toggleIcon) {
+        togglePassword.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            toggleIcon.classList.toggle('bi-eye-slash', !isPassword);
+            toggleIcon.classList.toggle('bi-eye', isPassword);
+        });
+    }
+
+    // Interactive Login Form Handler
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(event) {
+            if (!loginForm.checkValidity()) {
+                loginForm.classList.add('was-validated');
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            loginForm.classList.add('was-validated');
+
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const spinner = document.getElementById('loginBtnSpinner');
+            const btnText = document.getElementById('loginBtnText');
+            const alertContainer = document.getElementById('loginAlertContainer');
+
+            if (submitBtn) submitBtn.disabled = true;
+            if (spinner) spinner.classList.remove('d-none');
+            if (btnText) btnText.textContent = 'Signing in...';
+
+            try {
+                const formData = new FormData(loginForm);
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    loginForm.submit();
+                    return;
+                }
+
+                if (data && data.success) {
+                    if (btnText) btnText.textContent = 'Redirecting...';
+                    window.location.href = data.redirect || 'index.php?page=dashboard';
+                } else {
+                    if (alertContainer) {
+                        let verificationLink = '';
+                        if (data && data.verification_email) {
+                            verificationLink = `<div class="mt-2"><a class="alert-link" href="?page=verify-email&email=${encodeURIComponent(data.verification_email)}">Enter or resend verification OTP</a></div>`;
+                        }
+                        const errorMsg = (data && data.error) ? data.error : 'Invalid email/username or password.';
+                        alertContainer.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center animate__animated animate__headShake" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                                <div>
+                                    ${errorMsg}
+                                    ${verificationLink}
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                    }
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (spinner) spinner.classList.add('d-none');
+                    if (btnText) btnText.textContent = 'Sign In';
+                }
+            } catch (err) {
+                loginForm.submit();
+            }
+        });
+    }
 
     // Dynamic search filter for course catalog
     const searchInput = document.getElementById('courseSearch');

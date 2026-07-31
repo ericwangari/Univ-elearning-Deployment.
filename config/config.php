@@ -226,6 +226,14 @@ try {
 ------------------------------*/
 
 function redirect($url) {
+    if (strpos($url, 'page=login') !== false) {
+        $currentPage = $_GET['page'] ?? '';
+        if (!empty($currentPage) && $currentPage !== 'login' && $currentPage !== 'logout') {
+            $queryString = $_SERVER['QUERY_STRING'] ?? '';
+            $_SESSION['return_to'] = $queryString ? 'index.php?' . $queryString : 'index.php?page=' . $currentPage;
+        }
+    }
+
     // Allow both relative and absolute URLs
     if (strpos($url, 'http') === 0) {
         header("Location: " . $url);

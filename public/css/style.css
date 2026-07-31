@@ -236,6 +236,21 @@ body {
     padding: 1rem 0.75rem;
 }
 
+.password-toggle-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+    color: var(--primary-color);
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
