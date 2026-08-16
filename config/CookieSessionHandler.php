@@ -59,6 +59,10 @@ class CookieSessionHandler implements SessionHandlerInterface {
 
     #[\ReturnTypeWillChange]
     public function write($id, $data) {
+        if (headers_sent()) {
+            return false;
+        }
+
         if (empty($data)) {
             $this->destroy($id);
             return true;
@@ -80,7 +84,7 @@ class CookieSessionHandler implements SessionHandlerInterface {
         }
 
         if (PHP_VERSION_ID >= 70300) {
-            setcookie($this->cookieName, $payload, [
+            @setcookie($this->cookieName, $payload, [
                 'expires' => time() + 604800,
                 'path' => $this->cookiePath,
                 'domain' => $this->cookieDomain,
@@ -89,7 +93,7 @@ class CookieSessionHandler implements SessionHandlerInterface {
                 'samesite' => $this->sameSite
             ]);
         } else {
-            setcookie($this->cookieName, $payload, time() + 604800, $this->cookiePath, $this->cookieDomain, $this->secure, $this->httponly);
+            @setcookie($this->cookieName, $payload, time() + 604800, $this->cookiePath, $this->cookieDomain, $this->secure, $this->httponly);
         }
 
         return true;
@@ -97,8 +101,12 @@ class CookieSessionHandler implements SessionHandlerInterface {
 
     #[\ReturnTypeWillChange]
     public function destroy($id) {
+        if (headers_sent()) {
+            return false;
+        }
+
         if (PHP_VERSION_ID >= 70300) {
-            setcookie($this->cookieName, '', [
+            @setcookie($this->cookieName, '', [
                 'expires' => time() - 3600,
                 'path' => $this->cookiePath,
                 'domain' => $this->cookieDomain,
@@ -107,7 +115,7 @@ class CookieSessionHandler implements SessionHandlerInterface {
                 'samesite' => $this->sameSite
             ]);
         } else {
-            setcookie($this->cookieName, '', time() - 3600, $this->cookiePath, $this->cookieDomain, $this->secure, $this->httponly);
+            @setcookie($this->cookieName, '', time() - 3600, $this->cookiePath, $this->cookieDomain, $this->secure, $this->httponly);
         }
         if (isset($_COOKIE[$this->cookieName])) {
             unset($_COOKIE[$this->cookieName]);

@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 require_once 'config/config.php';
 require_once 'app/controllers/AuthController.php';
 require_once 'app/controllers/CourseController.php';
