@@ -303,8 +303,11 @@ class AdminController {
         $user_id = $_GET['id'] ?? null;
         if ($user_id) {
             $userModel = new User($this->pdo);
-            $userModel->updateStatus($user_id, 'Approved');
-            $_SESSION['success'] = "Instructor is now active.";
+            if ($userModel->updateStatus($user_id, 'Approved')) {
+                $_SESSION['success'] = "Instructor is now active.";
+            } else {
+                $_SESSION['error'] = "Failed to update instructor status.";
+            }
         }
 
         redirect('index.php?page=manage-instructors');
@@ -317,8 +320,11 @@ class AdminController {
         $user_id = $_GET['id'] ?? null;
         if ($user_id) {
             $userModel = new User($this->pdo);
-            $userModel->updateStatus($user_id, 'Rejected');
-            $_SESSION['error'] = "Instructor is now inactive.";
+            if ($userModel->updateStatus($user_id, 'Rejected')) {
+                $_SESSION['error'] = "Instructor is now inactive.";
+            } else {
+                $_SESSION['error'] = "Failed to update instructor status.";
+            }
         }
 
         redirect('index.php?page=manage-instructors');

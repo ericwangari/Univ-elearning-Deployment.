@@ -47,8 +47,13 @@ class User {
     }
 
     public function updateStatus($userId, $status) {
-        $stmt = $this->pdo->prepare("UPDATE users SET Status = ? WHERE UserID = ?");
-        return $stmt->execute([$status, $userId]);
+        try {
+            $stmt = $this->pdo->prepare("UPDATE users SET Status = ? WHERE UserID = ?");
+            return $stmt->execute([$status, $userId]);
+        } catch (Exception $e) {
+            error_log("User updateStatus error: " . $e->getMessage());
+            return false;
+        }
     }
 }
 ?>

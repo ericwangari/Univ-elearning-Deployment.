@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/database_compat.php';
+require_once __DIR__ . '/CookieSessionHandler.php';
 
 /* -----------------------------
    LOAD ENV FILE (IF EXISTS)
@@ -112,19 +113,12 @@ define('SMTP_SECURE', strtolower($smtpSecure));
 define('PLATFORM_FEEDBACK_EMAIL', $localConfig['platform_feedback_email'] ?? getenv('PLATFORM_FEEDBACK_EMAIL') ?: 'univelearning01@gmail.com');
 
 /* -----------------------------
-   START SESSION (SAFE & STABLE)
+   START SESSION (STATELESS FOR VERCEL)
 ------------------------------*/
 if (session_status() === PHP_SESSION_NONE) {
-    if (PHP_VERSION_ID >= 70300) {
-        session_set_cookie_params([
-            'lifetime' => 86400 * 7,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
-    } else {
-        session_set_cookie_params(86400 * 7, '/', '', false, true);
-    }
+    $sessionSecret = getenv('APP_SECRET') ?: getenv('DATABASE_URL') ?: 'univ_elearning_secret_key_2026';
+    $cookieHandler = new CookieSessionHandler($sessionSecret);
+    session_set_save_handler($cookieHandler, true);
     session_start();
 }
 
