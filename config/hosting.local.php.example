@@ -1,0 +1,29 @@
+<?php
+/**
+ * Local / Shared Hosting Configuration Template
+ * Copy this file to `config/hosting.local.php` and fill in your database credentials.
+ * Settings in hosting.local.php override environment variables.
+ */
+
+return [
+    // Database Driver: 'mysql' or 'pgsql'
+    'db_driver' => 'mysql',
+
+    // Database Host (e.g. '127.0.0.1', 'localhost', or Supabase pooler host)
+    'db_host'   => '127.0.0.1',
+
+    // Database Port (MySQL default: 3306, PostgreSQL / Supabase default: 5432 or 6543)
+    'db_port'   => '3306',
+
+    // Database Name
+    'db_name'   => 'univ_elearning',
+
+    // Database User
+    'db_user'   => 'root',
+
+    // Database Password
+    'db_pass'   => '',
+
+    // Base URL of your app (must end with trailing slash)
+    'base_url'  => 'http://localhost/univ_elearning/',
+];

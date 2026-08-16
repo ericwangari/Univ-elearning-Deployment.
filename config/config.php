@@ -1,5 +1,28 @@
 <?php
 require_once __DIR__ . '/database_compat.php';
+
+/* -----------------------------
+   LOAD ENV FILE (IF EXISTS)
+------------------------------*/
+$envPath = dirname(__DIR__) . '/.env';
+if (is_file($envPath)) {
+    $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            if (getenv($name) === false) {
+                putenv("{$name}={$value}");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+
 /* -----------------------------
    DATABASE CONFIGURATION
 ------------------------------*/
@@ -89,9 +112,19 @@ define('SMTP_SECURE', strtolower($smtpSecure));
 define('PLATFORM_FEEDBACK_EMAIL', $localConfig['platform_feedback_email'] ?? getenv('PLATFORM_FEEDBACK_EMAIL') ?: 'univelearning01@gmail.com');
 
 /* -----------------------------
-   START SESSION (SAFE)
+   START SESSION (SAFE & STABLE)
 ------------------------------*/
 if (session_status() === PHP_SESSION_NONE) {
+    if (PHP_VERSION_ID >= 70300) {
+        session_set_cookie_params([
+            'lifetime' => 86400 * 7,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    } else {
+        session_set_cookie_params(86400 * 7, '/', '', false, true);
+    }
     session_start();
 }
 
@@ -121,16 +154,28 @@ try {
         && preg_match('/^postgres\.([a-z0-9]+)$/i', DB_USER, $matches);
 
     if ($canRetrySupabaseDirect) {
+        $supabaseRef = strtolower($matches[1]);
+        $directHost = 'db.' . $supabaseRef . '.supabase.co';
         try {
-            $supabaseRef = strtolower($matches[1]);
-            $pdo = createAppPdoConnection(DB_DRIVER, 'db.' . $supabaseRef . '.supabase.co', '5432', DB_NAME, 'postgres', DB_PASS);
+            $pdo = createAppPdoConnection(DB_DRIVER, $directHost, '5432', DB_NAME, 'postgres', DB_PASS);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         } catch (PDOException $fallbackException) {
-            die("Database Connection Failed: " . $fallbackException->getMessage());
+            $msg = "Database Connection Failed:\n";
+            $msg .= "• Primary connection attempt (" . DB_HOST . ":" . DB_PORT . ") failed: " . $e->getMessage() . "\n";
+            $msg .= "• Fallback connection attempt (" . $directHost . ":5432) failed: " . $fallbackException->getMessage() . "\n\n";
+            $msg .= "Troubleshooting Tips:\n";
+            $msg .= "1. Verify database credentials in .env or config/hosting.local.php.\n";
+            $msg .= "2. Note: Direct Supabase hostnames (db.<ref>.supabase.co) only support IPv6 unless an IPv4 add-on is active. Ensure you use the Supabase Connection Pooler hostname (e.g. aws-0-[region].pooler.supabase.com) on IPv4 networks.\n";
+            $msg .= "3. Confirm that your Supabase database project is active and not paused in the Supabase Dashboard.";
+            die($msg);
         }
     } else {
-        die("Database Connection Failed: " . $e->getMessage());
+        $msg = "Database Connection Failed: " . $e->getMessage() . "\n\n";
+        $msg .= "Troubleshooting Tips:\n";
+        $msg .= "1. Check DB_HOST, DB_PORT, DB_NAME, DB_USER, and DB_PASS in .env or config/hosting.local.php.\n";
+        $msg .= "2. For Supabase, check DATABASE_URL in .env or set environment variables in your deployment settings.";
+        die($msg);
     }
 }
 
@@ -234,11 +279,16 @@ function redirect($url) {
         }
     }
 
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     // Allow both relative and absolute URLs
-    if (strpos($url, 'http') === 0) {
+    if (strpos($url, 'http://') === 0 || strpos($url, 'https://') === 0) {
         header("Location: " . $url);
     } else {
-        header("Location: " . BASE_URL . $url);
+        $target = ltrim($url, '/');
+        header("Location: " . $target);
     }
     exit();
 }
@@ -248,7 +298,7 @@ function isLoggedIn() {
 }
 
 function hasRole($role) {
-    return isset($_SESSION['user_type']) && $_SESSION['user_type'] === $role;
+    return isset($_SESSION['user_type']) && strcasecmp($_SESSION['user_type'], $role) === 0;
 }
 
 function requireLogin() {

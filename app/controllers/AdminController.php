@@ -85,8 +85,7 @@ class AdminController {
             $stmt = $this->pdo->prepare("UPDATE users SET UserType = ? WHERE UserID = ?");
             $stmt->execute([$user_type, $user_id]);
 
-            header("Location: index.php?page=admin-users");
-            exit;
+            redirect('index.php?page=admin-users');
         }
 
         $user_id = $_GET['id'] ?? null;
@@ -126,8 +125,7 @@ class AdminController {
             }
         }
 
-        header("Location: index.php?page=admin-users");
-        exit;
+        redirect('index.php?page=admin-users');
     }
 
     // View all courses
@@ -176,8 +174,7 @@ class AdminController {
                     $stmt->execute([$instructor_id, $course_id]);
                 }
 
-                header("Location: index.php?page=admin-courses");
-                exit;
+                redirect('index.php?page=admin-courses');
             }
         }
 
@@ -200,8 +197,7 @@ class AdminController {
         $course = $stmt->fetch();
 
         if (!$course) {
-            header("Location: index.php?page=admin-courses");
-            exit;
+            redirect('index.php?page=admin-courses');
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -225,8 +221,7 @@ class AdminController {
                     $stmt->execute([$instructor_id, $course_id]);
                 }
 
-                header("Location: index.php?page=admin-courses");
-                exit;
+                redirect('index.php?page=admin-courses');
             }
         }
 
@@ -244,8 +239,7 @@ class AdminController {
             $stmt->execute([$course_id]);
         }
 
-        header("Location: index.php?page=admin-courses");
-        exit;
+        redirect('index.php?page=admin-courses');
     }
 
     // View all results
@@ -313,8 +307,7 @@ class AdminController {
             $_SESSION['success'] = "Instructor is now active.";
         }
 
-        header("Location: index.php?page=manage-instructors");
-        exit;
+        redirect('index.php?page=manage-instructors');
     }
 
     // Reject instructor
@@ -328,8 +321,7 @@ class AdminController {
             $_SESSION['error'] = "Instructor is now inactive.";
         }
 
-        header("Location: index.php?page=manage-instructors");
-        exit;
+        redirect('index.php?page=manage-instructors');
     }
 
     // Helper methods

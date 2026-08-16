@@ -87,6 +87,17 @@ class AppPDO extends PDO {
         $sql = preg_replace('/\bINSERT\s+IGNORE\s+INTO\b/i', 'INSERT INTO', $sql);
         $sql = preg_replace('/SHOW\s+TABLES\s+LIKE\s+\?/i', "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = lower(?)", $sql);
         $sql = preg_replace('/SHOW\s+COLUMNS\s+FROM\s+([A-Za-z_][A-Za-z0-9_]*)\s+LIKE\s+\?/i', "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$1' AND column_name = lower(?)", $sql);
+        $sql = preg_replace_callback(
+            "/GROUP_CONCAT\s*\(\s*DISTINCT\s+([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+ORDER\s+BY\s+([A-Za-z_][A-Za-z0-9_\.]*))?\s+SEPARATOR\s+'([^']*)'\s*\)/i",
+            function ($matches) {
+                $valueExpression = $matches[1];
+                $orderExpression = $matches[2] ?? $valueExpression;
+                $separator = str_replace("'", "''", $matches[3]);
+
+                return "STRING_AGG(DISTINCT {$valueExpression}, '{$separator}' ORDER BY {$orderExpression})";
+            },
+            $sql
+        );
         $sql = preg_replace('/\bIsRead\s*=\s*0\b/i', 'IsRead = FALSE', $sql);
         $sql = preg_replace('/\bIsRead\s*=\s*1\b/i', 'IsRead = TRUE', $sql);
         $sql = preg_replace('/(INSERT\s+INTO\s+messages\s*\([^)]*IsRead[^)]*\)\s*VALUES\s*\(\s*\?\s*,\s*\?\s*,\s*\?\s*,\s*)0(\s*\))/is', '$1FALSE$2', $sql);
