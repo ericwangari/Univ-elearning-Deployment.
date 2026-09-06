@@ -123,11 +123,13 @@ class CourseController {
         $sort = $_GET['sort'] ?? 'new';
 
         $query = "SELECT c.*, 
-                  CASE WHEN e.EnrollmentID IS NOT NULL THEN 1 ELSE 0 END as IsEnrolled,
+                  CASE WHEN EXISTS (
+                      SELECT 1 FROM enrollments own_e
+                      WHERE own_e.CourseID = c.CourseID AND own_e.UserID = ?
+                  ) THEN 1 ELSE 0 END as IsEnrolled,
                   COUNT(DISTINCT e2.EnrollmentID) as StudentCount,
                   GROUP_CONCAT(DISTINCT u.Username ORDER BY u.Username SEPARATOR ', ') as InstructorNames
                   FROM courses c 
-                  LEFT JOIN enrollments e ON c.CourseID = e.CourseID AND e.UserID = ?
                   LEFT JOIN enrollments e2 ON c.CourseID = e2.CourseID
                   LEFT JOIN instructor_courses ic ON c.CourseID = ic.CourseID
                   LEFT JOIN users u ON ic.InstructorID = u.UserID
@@ -418,6 +420,16 @@ class CourseController {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $enrollments = $stmt->fetchAll();
+        $enrollmentsByCourse = [];
+
+        foreach ($enrollments as $enrollment) {
+            $courseId = (int) $enrollment['CourseID'];
+            if (!isset($enrollmentsByCourse[$courseId])) {
+                $enrollmentsByCourse[$courseId] = $enrollment;
+            }
+        }
+
+        $enrollments = array_values($enrollmentsByCourse);
 
         // Calculate progress for each enrollment
         foreach ($enrollments as &$enrollment) {
@@ -471,10 +483,26 @@ class CourseController {
             exit;
         }
 
+        if (($_SESSION['user_type'] ?? '') !== 'Student') {
+            header("Location: index.php?page=dashboard");
+            exit;
+        }
+
         $user_id = $_SESSION['user_id'];
-        $course_id = $_POST['course_id'] ?? null;
+        $course_id = filter_input(INPUT_POST, 'course_id', FILTER_VALIDATE_INT);
+        $redirect = $_POST['redirect'] ?? 'courses';
+        if (!in_array($redirect, ['courses', 'course-details'], true)) {
+            $redirect = 'courses';
+        }
 
         if ($course_id) {
+            $stmt = $this->pdo->prepare("SELECT CourseID FROM courses WHERE CourseID = ?");
+            $stmt->execute([$course_id]);
+            if (!$stmt->fetchColumn()) {
+                header("Location: index.php?page=courses");
+                exit;
+            }
+
             // Check if already enrolled
             $stmt = $this->pdo->prepare("SELECT * FROM enrollments WHERE UserID = ? AND CourseID = ?");
             $stmt->execute([$user_id, $course_id]);
@@ -485,8 +513,12 @@ class CourseController {
             }
         }
 
-        $redirect = $_POST['redirect'] ?? 'courses';
-        header("Location: index.php?page=$redirect&id=$course_id");
+        $location = "index.php?page=$redirect";
+        if ($redirect === 'course-details') {
+            $location .= "&id=" . urlencode((string) $course_id);
+        }
+        header("Location: $location");
+        exit;
     }
 
     public function drop() {

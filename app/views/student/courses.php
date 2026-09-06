@@ -94,6 +94,7 @@ $sort = $_GET['sort'] ?? 'new';
                                     <a href="?page=course-details&id=<?php echo $course['CourseID']; ?>" class="btn btn-light border flex-grow-1 fw-bold">Details</a>
                                     <form action="?page=enroll" method="POST" class="flex-grow-1">
                                         <input type="hidden" name="course_id" value="<?php echo $course['CourseID']; ?>">
+                                        <input type="hidden" name="redirect" value="course-details">
                                         <button type="submit" class="btn btn-primary w-100 fw-bold">Enroll</button>
                                     </form>
                                 </div>

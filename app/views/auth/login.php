@@ -15,7 +15,7 @@
     <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="public/css/style.css?v=11">
     <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
@@ -50,62 +50,54 @@
                         <p class="text-muted">Sign in to continue your learning journey.</p>
                     </div>
 
-                    <div id="loginAlertContainer">
-                        <?php if (isset($error)): ?>
-                            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center animate__animated animate__headShake" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
-                                <div>
-                                    <?php echo htmlspecialchars($error); ?>
-                                    <?php if (!empty($verification_email)): ?>
-                                        <div class="mt-2">
-                                            <a class="alert-link" href="?page=verify-email&email=<?php echo urlencode($verification_email); ?>">Enter or resend verification OTP</a>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <?php if (isset($error)): ?>
+                        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center animate__animated animate__headShake" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                            <div>
+                                <?php echo htmlspecialchars($error); ?>
+                                <?php if (!empty($verification_email)): ?>
+                                    <div class="mt-2">
+                                        <a class="alert-link" href="?page=verify-email&email=<?php echo urlencode($verification_email); ?>">Enter or resend verification OTP</a>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
-                        <?php if (isset($success_message)): ?>
-                            <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
-                                <i class="bi bi-check-circle-fill flex-shrink-0 me-2"></i>
-                                <div><?php echo htmlspecialchars($success_message); ?></div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (isset($success_message)): ?>
+                        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                            <i class="bi bi-check-circle-fill flex-shrink-0 me-2"></i>
+                            <div><?php echo htmlspecialchars($success_message); ?></div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
 
-                    <?php 
-                        $inputVal = $_POST['email'] ?? $remembered_email ?? ''; 
-                        $hasPredefinedEmail = !empty($inputVal);
-                    ?>
-
-                    <form method="POST" id="loginForm" class="needs-validation" novalidate>
+                    <form method="POST" class="needs-validation" novalidate>
                         <div class="form-floating mb-4">
-                            <input type="text" name="email" class="form-control" id="emailInput" placeholder="name@example.com" value="<?php echo htmlspecialchars($inputVal); ?>" required autocomplete="username" <?php echo $hasPredefinedEmail ? '' : 'autofocus'; ?>>
+                            <input type="text" name="email" class="form-control" id="emailInput" placeholder="name@example.com" value="<?php echo htmlspecialchars($remembered_email ?? ''); ?>" required>
                             <label for="emailInput"><i class="bi bi-envelope me-2 text-muted"></i>Email Address or Username</label>
                             <div class="invalid-feedback">Please provide a valid email or username.</div>
                         </div>
                         
                         <div class="form-floating mb-4 position-relative">
-                            <input type="password" name="password" class="form-control pe-5" id="passwordInput" placeholder="Password" required autocomplete="current-password" <?php echo $hasPredefinedEmail ? 'autofocus' : ''; ?>>
+                            <input type="password" name="password" class="form-control pe-5" id="passwordInput" placeholder="Password" required>
                             <label for="passwordInput"><i class="bi bi-lock me-2 text-muted"></i>Password</label>
-                            <button type="button" class="password-toggle-btn position-absolute end-0 top-50 translate-middle-y me-3 text-decoration-none z-3 p-1" id="togglePassword" aria-label="Toggle password visibility" tabindex="-1">
-                                <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 p-2 text-muted" id="togglePassword" aria-label="Show password" aria-pressed="false">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
                             </button>
                             <div class="invalid-feedback">Password is required.</div>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me" value="1" <?php echo (!empty($remembered_email) || !empty($_POST['remember_me'])) ? 'checked' : ''; ?>>
+                                <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me" value="1" <?php echo !empty($remembered_email) ? 'checked' : ''; ?>>
                                 <label class="form-check-label text-muted small" for="rememberMe">Remember me</label>
                             </div>
                             <a href="?page=forgot-password" class="small text-primary fw-semibold text-decoration-none">Forgot password?</a>
                         </div>
 
-                        <button type="submit" id="loginSubmitBtn" class="btn btn-primary w-100 py-3 mb-4 fw-bold shadow-sm rounded-3 fs-5 position-relative overflow-hidden group">
-                            <span id="loginBtnSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
-                            <span id="loginBtnText" class="position-relative z-1">Sign In</span>
+                        <button type="submit" class="btn btn-primary w-100 py-3 mb-4 fw-bold shadow-sm rounded-3 fs-5 position-relative overflow-hidden group">
+                            <span class="position-relative z-1">Sign In</span>
                         </button>
 
                         <div class="text-center text-muted border-top pt-4">
@@ -119,6 +111,6 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="public/js/main.js"></script>
+    <script src="public/js/main.js?v=12"></script>
 </body>
 </html>

@@ -112,13 +112,30 @@ define('SMTP_PASSWORD', $smtpPassword);
 define('SMTP_SECURE', strtolower($smtpSecure));
 define('PLATFORM_FEEDBACK_EMAIL', $localConfig['platform_feedback_email'] ?? getenv('PLATFORM_FEEDBACK_EMAIL') ?: 'univelearning01@gmail.com');
 
+$isVercelRuntime = getenv('VERCEL') === '1' || getenv('VERCEL_URL') !== false || getenv('VERCEL_PROJECT_PRODUCTION_URL') !== false;
+define('IS_LOCAL_DEV', !$isVercelRuntime && in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1', '::1'], true));
+
 /* -----------------------------
    START SESSION (STATELESS FOR VERCEL)
 ------------------------------*/
 if (session_status() === PHP_SESSION_NONE) {
-    $sessionSecret = getenv('APP_SECRET') ?: getenv('DATABASE_URL') ?: 'univ_elearning_secret_key_2026';
-    $cookieHandler = new CookieSessionHandler($sessionSecret);
-    session_set_save_handler($cookieHandler, true);
+    if ($isVercelRuntime) {
+        $sessionSecret = getenv('APP_SECRET') ?: getenv('DATABASE_URL') ?: 'univ_elearning_secret_key_2026';
+        $cookieHandler = new CookieSessionHandler($sessionSecret);
+        session_set_save_handler($cookieHandler, true);
+    } else {
+        $baseUrlParts = parse_url(BASE_URL);
+        $basePath = $baseUrlParts['path'] ?? '/';
+        $cookiePath = rtrim($basePath, '/');
+        $cookiePath = $cookiePath === '' ? '/' : $cookiePath . '/';
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => $cookiePath,
+            'secure' => false,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
     session_start();
 }
 
@@ -208,6 +225,19 @@ if (DB_DRIVER !== 'pgsql') {
             INDEX idx_email_verification_user (UserID),
             INDEX idx_email_verification_expires (ExpiresAt),
             FOREIGN KEY (UserID) REFERENCES users(UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB;",
+        "CREATE TABLE IF NOT EXISTS messages (
+            MessageID INT AUTO_INCREMENT PRIMARY KEY,
+            SenderID INT NOT NULL,
+            ReceiverID INT NOT NULL,
+            MessageText TEXT NOT NULL,
+            SentAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            IsRead TINYINT(1) NOT NULL DEFAULT 0,
+            INDEX idx_messages_sender_receiver (SenderID, ReceiverID),
+            INDEX idx_messages_receiver_read (ReceiverID, IsRead),
+            INDEX idx_messages_sent_at (SentAt),
+            FOREIGN KEY (SenderID) REFERENCES users(UserID) ON DELETE CASCADE,
+            FOREIGN KEY (ReceiverID) REFERENCES users(UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB;",
     ];
 

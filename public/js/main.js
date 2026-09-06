@@ -4,7 +4,97 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    
+    let deferredInstallPrompt = null;
+    const pwaDismissedKey = 'univLearnPwaInstallDismissedV2';
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isAppleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;
+
+    let pwaInstallWidget = document.getElementById('pwaInstallWidget');
+    if (!pwaInstallWidget) {
+        pwaInstallWidget = document.createElement('div');
+        pwaInstallWidget.className = 'pwa-install-widget';
+        pwaInstallWidget.id = 'pwaInstallWidget';
+        pwaInstallWidget.hidden = true;
+        pwaInstallWidget.innerHTML = `
+            <button type="button" class="pwa-install-button" id="pwaInstallButton">
+                <i class="bi bi-download"></i>
+                <span>Install App</span>
+            </button>
+            <button type="button" class="pwa-install-dismiss" id="pwaInstallDismiss" aria-label="Hide install prompt">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        `;
+        document.body.appendChild(pwaInstallWidget);
+    }
+
+    const pwaInstallButton = document.getElementById('pwaInstallButton');
+    const pwaInstallDismiss = document.getElementById('pwaInstallDismiss');
+    const hasDismissedInstall = () => {
+        try {
+            return localStorage.getItem(pwaDismissedKey) === '1';
+        } catch (e) {
+            return false;
+        }
+    };
+    const showPwaInstallWidget = (force = false) => {
+        if (pwaInstallWidget && !isStandalone && !hasDismissedInstall() && (force || deferredInstallPrompt)) {
+            pwaInstallWidget.hidden = false;
+        }
+    };
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        showPwaInstallWidget();
+    });
+
+    window.setTimeout(() => {
+        showPwaInstallWidget(isMobileViewport);
+    }, 1200);
+
+    if (pwaInstallButton) {
+        pwaInstallButton.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) {
+                const message = isAppleMobile
+                    ? 'Tap Share, then choose Add to Home Screen.'
+                    : 'Use your browser menu and choose Install app or Add to Home screen.';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Install UnivLearn',
+                        text: message,
+                        icon: 'info',
+                        confirmButtonColor: '#6366f1'
+                    });
+                } else {
+                    alert(message);
+                }
+                return;
+            }
+
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            pwaInstallWidget.hidden = true;
+        });
+    }
+
+    if (pwaInstallDismiss) {
+        pwaInstallDismiss.addEventListener('click', () => {
+            try {
+                localStorage.setItem(pwaDismissedKey, '1');
+            } catch (e) {}
+            pwaInstallWidget.hidden = true;
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        if (pwaInstallWidget) {
+            pwaInstallWidget.hidden = true;
+        }
+    });
+
     // Enable Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -12,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form Validation logic
-    const forms = document.querySelectorAll('.needs-validation:not(#loginForm)');
+    const forms = document.querySelectorAll('.needs-validation');
     Array.prototype.slice.call(forms).forEach(function (form) {
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
@@ -23,89 +113,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }, false);
     });
 
-    // Password visibility toggle
-    const togglePassword = document.getElementById('togglePassword');
+    // Login password visibility toggle
     const passwordInput = document.getElementById('passwordInput');
-    const toggleIcon = document.getElementById('togglePasswordIcon');
+    const togglePassword = document.getElementById('togglePassword');
+    if (passwordInput && togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const isVisible = passwordInput.type === 'text';
+            passwordInput.type = isVisible ? 'password' : 'text';
+            this.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
+            this.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
 
-    if (togglePassword && passwordInput && toggleIcon) {
-        togglePassword.addEventListener('click', function(e) {
-            e.preventDefault();
-            const isPassword = passwordInput.getAttribute('type') === 'password';
-            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-            toggleIcon.classList.toggle('bi-eye-slash', !isPassword);
-            toggleIcon.classList.toggle('bi-eye', isPassword);
-        });
-    }
-
-    // Interactive Login Form Handler
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(event) {
-            if (!loginForm.checkValidity()) {
-                loginForm.classList.add('was-validated');
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-            loginForm.classList.add('was-validated');
-
-            const submitBtn = document.getElementById('loginSubmitBtn');
-            const spinner = document.getElementById('loginBtnSpinner');
-            const btnText = document.getElementById('loginBtnText');
-            const alertContainer = document.getElementById('loginAlertContainer');
-
-            if (submitBtn) submitBtn.disabled = true;
-            if (spinner) spinner.classList.remove('d-none');
-            if (btnText) btnText.textContent = 'Signing in...';
-
-            try {
-                const formData = new FormData(loginForm);
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                let data;
-                try {
-                    data = await response.json();
-                } catch (e) {
-                    loginForm.submit();
-                    return;
-                }
-
-                if (data && data.success) {
-                    if (btnText) btnText.textContent = 'Redirecting...';
-                    window.location.href = data.redirect || 'index.php?page=dashboard';
-                } else {
-                    if (alertContainer) {
-                        let verificationLink = '';
-                        if (data && data.verification_email) {
-                            verificationLink = `<div class="mt-2"><a class="alert-link" href="?page=verify-email&email=${encodeURIComponent(data.verification_email)}">Enter or resend verification OTP</a></div>`;
-                        }
-                        const errorMsg = (data && data.error) ? data.error : 'Invalid email/username or password.';
-                        alertContainer.innerHTML = `
-                            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center animate__animated animate__headShake" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
-                                <div>
-                                    ${errorMsg}
-                                    ${verificationLink}
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `;
-                    }
-                    if (submitBtn) submitBtn.disabled = false;
-                    if (spinner) spinner.classList.add('d-none');
-                    if (btnText) btnText.textContent = 'Sign In';
-                }
-            } catch (err) {
-                loginForm.submit();
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('bi-eye', isVisible);
+                icon.classList.toggle('bi-eye-slash', !isVisible);
             }
         });
     }

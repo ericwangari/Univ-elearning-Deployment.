@@ -9,6 +9,16 @@
 </div> <!-- /#wrapper -->
 
 <?php if (isLoggedIn()): ?>
+    <div class="pwa-install-widget" id="pwaInstallWidget" hidden>
+        <button type="button" class="pwa-install-button" id="pwaInstallButton">
+            <i class="bi bi-download"></i>
+            <span>Install App</span>
+        </button>
+        <button type="button" class="pwa-install-dismiss" id="pwaInstallDismiss" aria-label="Hide install prompt">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
     <div class="student-feedback-widget" id="studentFeedbackWidget" data-hidden-key="studentFeedbackHidden">
         <button type="button" class="student-feedback-tab" id="studentFeedbackRestore" aria-label="Show feedback button">
             <i class="bi bi-chat-left-text"></i>
@@ -58,6 +68,6 @@
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 <!-- Custom JS -->
-<script src="public/js/main.js?v=9"></script>
+<script src="public/js/main.js?v=11"></script>
 </body>
 </html>

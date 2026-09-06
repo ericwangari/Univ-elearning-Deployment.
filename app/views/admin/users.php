@@ -28,16 +28,16 @@ include __DIR__ . '/../partials/sidebar_v2.php';
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-3">
             <div class="row g-3">
-                <div class="col-md-6">
-                    <form method="GET" class="input-group">
+
+                    <form method="GET" class="input-group d-none">
                         <input type="hidden" name="page" value="admin-users">
-                        <input type="text" class="form-control" name="search" placeholder="Search by username or email..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+                        <input type="text" class="form-control" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
                         <button class="btn btn-outline-secondary" type="submit">
                             <i class="bi bi-search"></i> Search
                         </button>
                     </form>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <select class="form-select" onchange="window.location='?page=admin-users&type=' + this.value">
                         <option value="">All User Types</option>
                         <option value="Admin" <?php echo (($_GET['type'] ?? '') === 'Admin') ? 'selected' : ''; ?>>Admin</option>
@@ -57,7 +57,23 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                         <tr>
                             <th class="ps-4">Username</th>
                             <th>Email</th>
-                            <th>Role</th>
+                            <?php
+                                $roleDirection = (($sort ?? '') === 'role' && ($direction ?? 'desc') === 'asc') ? 'desc' : 'asc';
+                                $roleSortParams = [
+                                    'page' => 'admin-users',
+                                    'sort' => 'role',
+                                    'direction' => $roleDirection,
+                                ];
+                                if (!empty($search)) $roleSortParams['search'] = $search;
+                                if (!empty($type)) $roleSortParams['type'] = $type;
+                                $roleSortUrl = '?' . http_build_query($roleSortParams);
+                            ?>
+                            <th>
+                                <a href="<?php echo htmlspecialchars($roleSortUrl); ?>" class="text-reset text-decoration-none d-inline-flex align-items-center gap-1" aria-label="Sort by role <?php echo $roleDirection === 'asc' ? 'ascending' : 'descending'; ?>">
+                                    Role
+                                    <i class="bi <?php echo (($sort ?? '') === 'role' && ($direction ?? '') === 'asc') ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up-alt'; ?>" aria-hidden="true"></i>
+                                </a>
+                            </th>
                             <th>Joined Date</th>
                             <th class="pe-4">Actions</th>
                         </tr>

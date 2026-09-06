@@ -16,112 +16,53 @@ class AuthController {
         }
 
         $remembered_email = $_COOKIE['remembered_login'] ?? '';
-        $error = null;
-        $success_message = null;
+        $success_message = $_SESSION['auth_success_message'] ?? null;
+        unset($_SESSION['auth_success_message']);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
-                      || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
-
-            $rawInput = trim($_POST['email'] ?? '');
-            // Strip hidden non-printable or zero-width spaces (\xA0)
-            $cleanInput = trim(preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $rawInput));
+            $email = trim($_POST['email'] ?? '');
+            // Passwords are opaque values. Registration does not trim them, so
+            // trimming here would make otherwise valid passwords impossible to use.
             $password = $_POST['password'] ?? '';
 
-            if (empty($cleanInput) || empty($password)) {
-                $error = "Please enter both email/username and password.";
-            } else {
-                // Try case-insensitive lookup by email or username
-                $stmt = $this->pdo->prepare("SELECT * FROM users WHERE lower(Email) = lower(?) OR lower(Username) = lower(?) LIMIT 1");
-                $stmt->execute([$cleanInput, $cleanInput]);
-                $user = $stmt->fetch();
+            // Try to find user by email first, then by username
+            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE Email = ? OR Username = ?");
+            $stmt->execute([$email, $email]);
+            $user = $stmt->fetch();
 
-                if ($user && password_verify($password, $user['Password'])) {
-                    // Auto-verify email if SMTP host is not configured
-                    if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
-                        if (!defined('SMTP_HOST') || SMTP_HOST === '') {
-                            try {
-                                $stmtFix = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
-                                $stmtFix->execute([$user['UserID']]);
-                                $user['EmailVerifiedAt'] = date('Y-m-d H:i:s');
-                            } catch (Exception $e) {
-                                error_log("Login auto-verify error: " . $e->getMessage());
-                            }
-                        }
-                    }
-
-                    if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
-                        $error = "Please verify your email address before signing in. Check your inbox for the OTP code.";
-                        $verification_email = $user['Email'];
-                    } elseif ($user['Status'] === 'Pending') {
-                        $error = "Your account is currently waiting for admin approval. Please check back later.";
-                    } elseif ($user['Status'] === 'Rejected') {
-                        $error = "Your account registration has been rejected. Please contact support.";
-                    } else {
-                        session_regenerate_id(true);
-                        $_SESSION['user_id'] = $user['UserID'];
-                        $_SESSION['username'] = $user['Username'];
-                        $_SESSION['user_type'] = $user['UserType'];
-
-                        try {
-                            $stmtActive = $this->pdo->prepare("UPDATE users SET LastActiveAt = NOW() WHERE UserID = ?");
-                            $stmtActive->execute([$user['UserID']]);
-                        } catch (Exception $e) {
-                            // Column might be missing on legacy schemas
-                        }
-
-                        if (!empty($_POST['remember_me'])) {
-                            if (PHP_VERSION_ID >= 70300) {
-                                setcookie('remembered_login', $cleanInput, [
-                                    'expires' => time() + (30 * 24 * 60 * 60),
-                                    'path' => '/',
-                                    'httponly' => true,
-                                    'samesite' => 'Lax'
-                                ]);
-                            } else {
-                                setcookie('remembered_login', $cleanInput, time() + (30 * 24 * 60 * 60), '/', '', false, true);
-                            }
-                        } else {
-                            if (PHP_VERSION_ID >= 70300) {
-                                setcookie('remembered_login', '', [
-                                    'expires' => time() - 3600,
-                                    'path' => '/',
-                                    'httponly' => true,
-                                    'samesite' => 'Lax'
-                                ]);
-                            } else {
-                                setcookie('remembered_login', '', time() - 3600, '/', '', false, true);
-                            }
-                        }
-
-                        $redirectTarget = $_SESSION['return_to'] ?? $_GET['return_to'] ?? $_POST['return_to'] ?? 'index.php?page=dashboard';
-                        unset($_SESSION['return_to']);
-                        if (strpos($redirectTarget, 'http://') === 0 || strpos($redirectTarget, 'https://') === 0 || strpos($redirectTarget, '//') === 0) {
-                            $redirectTarget = 'index.php?page=dashboard';
-                        }
-
-                        if ($isAjax) {
-                            header('Content-Type: application/json');
-                            echo json_encode(['success' => true, 'redirect' => $redirectTarget]);
-                            exit;
-                        }
-
-                        header("Location: " . $redirectTarget);
-                        exit;
-                    }
+            if ($user && password_verify($password, $user['Password'])) {
+                if (array_key_exists('EmailVerifiedAt', $user) && empty($user['EmailVerifiedAt'])) {
+                    $error = "Please verify your email address before signing in. Check your inbox for the OTP code.";
+                    $verification_email = $user['Email'];
+                } elseif ($user['Status'] === 'Pending') {
+                    $error = "Your account is currently waiting for admin approval. Please check back later.";
+                } elseif ($user['Status'] === 'Rejected') {
+                    $error = "Your account registration has been rejected. Please contact support.";
                 } else {
-                    $error = "Invalid email/username or password";
-                }
-            }
+                    session_regenerate_id(true);
+                    $_SESSION['user_id'] = $user['UserID'];
+                    $_SESSION['username'] = $user['Username'];
+                    $_SESSION['user_type'] = $user['UserType'];
 
-            if ($isAjax) {
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => false,
-                    'error' => $error,
-                    'verification_email' => $verification_email ?? null
-                ]);
-                exit;
+                    $rememberCookieOptions = [
+                        'expires' => !empty($_POST['remember_me']) ? time() + (30 * 24 * 60 * 60) : time() - 3600,
+                        'path' => defined('COOKIE_PATH') ? COOKIE_PATH : '/',
+                        'secure' => defined('COOKIE_SECURE') ? COOKIE_SECURE : false,
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ];
+
+                    if (!empty($_POST['remember_me'])) {
+                        setcookie('remembered_login', $email, $rememberCookieOptions);
+                    } else {
+                        setcookie('remembered_login', '', $rememberCookieOptions);
+                    }
+
+                    header("Location: index.php?page=dashboard");
+                    exit;
+                }
+            } else {
+                $error = "Invalid email/username or password";
             }
         }
 
@@ -136,9 +77,7 @@ class AuthController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = trim($_POST['username'] ?? '');
-            $rawEmail = $_POST['email'] ?? '';
-            // Strip hidden characters, non-breaking spaces (\xA0) and trailing spaces added by mobile keypads
-            $email = strtolower(preg_replace('/[^\x21-\x7E]/', '', trim($rawEmail)));
+            $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
             $user_type = $_POST['user_type'] ?? 'Student';
@@ -151,8 +90,8 @@ class AuthController {
             }
             if (empty($email)) {
                 $errors[] = "Email is required";
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) && !preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $email)) {
-                $errors[] = "Please enter a valid email address.";
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/@gmail\.com$/i', $email)) {
+                $errors[] = "Please register with a real Gmail address so you can receive your OTP code.";
             }
             if (empty($password)) {
                 $errors[] = "Password is required";
@@ -193,27 +132,30 @@ class AuthController {
                             $stmt->execute([$username, $email, $hashed_password, $user_type, $status]);
                             $userId = (int) $this->pdo->lastInsertId();
 
-                            if (!$this->createAndSendEmailVerificationOtp($userId, $email, $username)) {
-                                throw new Exception("We could not send the verification OTP. Please check your email address and try again.");
+                            $verificationEmailSent = $this->createAndSendEmailVerificationOtp($userId, $email, $username);
+                            $localAutoVerified = !$verificationEmailSent && defined('IS_LOCAL_DEV') && IS_LOCAL_DEV;
+
+                            if (!$verificationEmailSent && !$localAutoVerified) {
+                                throw new Exception("We could not send the verification OTP. Please confirm your Gmail address and try again.");
+                            }
+
+                            if ($localAutoVerified) {
+                                $stmt = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
+                                $stmt->execute([$userId]);
                             }
 
                             $this->pdo->commit();
 
-                            $checkStmt = $this->pdo->prepare("SELECT EmailVerifiedAt FROM users WHERE UserID = ?");
-                            $checkStmt->execute([$userId]);
-                            $u = $checkStmt->fetch();
-
-                            if (!empty($u['EmailVerifiedAt'])) {
-                                $success_message = $status === 'Pending'
-                                    ? "Your account has been created and verified. Please wait for admin approval before signing in."
-                                    : "Your account has been created successfully! You can now sign in.";
-                                require __DIR__ . '/../views/auth/login.php';
-                                exit;
+                            if ($localAutoVerified) {
+                                $_SESSION['auth_success_message'] = $status === 'Pending'
+                                    ? "Your local instructor account was created and verified. Wait for admin approval before signing in."
+                                    : "Your local account was created and verified. You can sign in now.";
+                                redirect('index.php?page=login');
                             }
 
                             $success_message = $status === 'Pending'
-                                ? "Your account has been created. Enter the OTP sent to your email, then wait for admin approval before signing in."
-                                : "Your account has been created. Enter the OTP sent to your email to verify your email.";
+                                ? "Your account has been created. Enter the OTP sent to your Gmail, then wait for admin approval before signing in."
+                                : "Your account has been created. Enter the OTP sent to your Gmail to verify your email.";
                             require __DIR__ . '/../views/auth/verify_email.php';
                             exit;
                         } catch (Exception $e) {
@@ -266,7 +208,9 @@ class AuthController {
             $stmt->execute([$tokenRecord['UserID'], $tokenRecord['TokenID']]);
 
             $this->pdo->commit();
-            $success_message = "Your email has been verified. You can now sign in.";
+            $_SESSION['auth_success_message'] = "Your email has been verified. You can now sign in.";
+            header("Location: index.php?page=login");
+            exit;
         } catch (Exception $e) {
             $this->pdo->rollBack();
             error_log("Email verification failed: " . $e->getMessage());
@@ -299,9 +243,9 @@ class AuthController {
         }
 
         if (!empty($user['EmailVerifiedAt'])) {
-            $success_message = "This email is already verified. You can sign in.";
-            require __DIR__ . '/../views/auth/login.php';
-            return;
+            $_SESSION['auth_success_message'] = "This email is already verified. You can sign in.";
+            header("Location: index.php?page=login");
+            exit;
         }
 
         if ($this->createAndSendEmailVerificationOtp((int) $user['UserID'], $user['Email'], $user['Username'])) {
@@ -505,17 +449,8 @@ class AuthController {
             . "This code expires in 15 minutes. If you did not request this, you can ignore this email.\n";
         $fromName = str_replace(["\r", "\n"], '', MAIL_FROM_NAME);
         $fromEmail = str_replace(["\r", "\n"], '', MAIL_FROM);
-        $headers = [
-            'From: ' . $fromName . ' <' . $fromEmail . '>',
-            'Reply-To: ' . $fromEmail,
-            'Content-Type: text/plain; charset=UTF-8',
-        ];
 
-        if (SMTP_HOST !== '') {
-            return $this->sendSmtpEmail($email, $subject, $message, $fromEmail, $fromName);
-        }
-
-        return mail($email, $subject, $message, implode("\r\n", $headers));
+        return $this->sendConfiguredEmail($email, $subject, $message, $fromEmail, $fromName);
     }
 
     private function sendEmailVerificationEmail($email, $username, $otp) {
@@ -526,34 +461,82 @@ class AuthController {
             . "This code expires in 15 minutes. You will need to verify your email before signing in.\n";
         $fromName = str_replace(["\r", "\n"], '', MAIL_FROM_NAME);
         $fromEmail = str_replace(["\r", "\n"], '', MAIL_FROM);
-        $headers = [
-            'From: ' . $fromName . ' <' . $fromEmail . '>',
-            'Reply-To: ' . $fromEmail,
-            'Content-Type: text/plain; charset=UTF-8',
-        ];
 
-        if (defined('SMTP_HOST') && SMTP_HOST !== '') {
-            $sent = $this->sendSmtpEmail($email, $subject, $message, $fromEmail, $fromName);
-            if ($sent) {
-                return true;
-            }
+        return $this->sendConfiguredEmail($email, $subject, $message, $fromEmail, $fromName);
+    }
+
+    private function sendConfiguredEmail($to, $subject, $message, $fromEmail, $fromName) {
+        if (SMTP_HOST !== '') {
+            return $this->sendSmtpEmail($to, $subject, $message, $fromEmail, $fromName);
         }
 
-        $sent = @mail($email, $subject, $message, implode("\r\n", $headers));
-        if ($sent) {
+        return $this->sendPhpMailerEmail($to, $subject, $message);
+    }
+
+    private function sendPhpMailerEmail($to, $subject, $message) {
+        $mailConfigPath = __DIR__ . '/../../config/mail_config.php';
+        if (!is_file($mailConfigPath)) {
+            error_log('Auth email failed: config/mail_config.php not found.');
+            return false;
+        }
+
+        $mailConfig = require $mailConfigPath;
+        if (($mailConfig['password'] ?? '') === '' || ($mailConfig['password'] ?? '') === 'GOOGLE_APP_PASSWORD_HERE') {
+            error_log('Auth email failed: Gmail App Password is not configured.');
+            return false;
+        }
+
+        if (!$this->loadPhpMailer()) {
+            error_log('Auth email failed: PHPMailer is not installed.');
+            return false;
+        }
+
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $mailConfig['host'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $mailConfig['username'];
+            $mail->Password = $mailConfig['password'];
+            $mail->SMTPSecure = strtolower($mailConfig['encryption'] ?? 'tls') === 'ssl'
+                ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = (int) $mailConfig['port'];
+            $mail->CharSet = 'UTF-8';
+
+            $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body = $message;
+
+            return $mail->send();
+        } catch (Exception $e) {
+            error_log('Auth email failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function loadPhpMailer() {
+        if (class_exists('\PHPMailer\PHPMailer\PHPMailer')) {
             return true;
         }
 
-        // Fallback for serverless hosting without SMTP configured:
-        // Auto-verify email so registration and login succeed.
-        try {
-            $stmt = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE Email = ?");
-            $stmt->execute([$email]);
-        } catch (Exception $e) {
-            error_log("Auto-verify email fallback error: " . $e->getMessage());
+        $autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+        $manualPhpMailerPath = __DIR__ . '/../../PHPMailer/src';
+
+        if (is_file($autoloadPath)) {
+            require_once $autoloadPath;
+        } elseif (
+            is_file($manualPhpMailerPath . '/Exception.php') &&
+            is_file($manualPhpMailerPath . '/PHPMailer.php') &&
+            is_file($manualPhpMailerPath . '/SMTP.php')
+        ) {
+            require_once $manualPhpMailerPath . '/Exception.php';
+            require_once $manualPhpMailerPath . '/PHPMailer.php';
+            require_once $manualPhpMailerPath . '/SMTP.php';
         }
 
-        return true;
+        return class_exists('\PHPMailer\PHPMailer\PHPMailer');
     }
 
     private function sendSmtpEmail($to, $subject, $message, $fromEmail, $fromName) {

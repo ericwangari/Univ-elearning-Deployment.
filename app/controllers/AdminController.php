@@ -50,6 +50,15 @@ class AdminController {
 
         $search = $_GET['search'] ?? '';
         $type = $_GET['type'] ?? '';
+        $sort = $_GET['sort'] ?? 'created';
+        $direction = strtolower($_GET['direction'] ?? 'desc');
+
+        if (!in_array($sort, ['created', 'role'], true)) {
+            $sort = 'created';
+        }
+        if (!in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
 
         $query = "SELECT * FROM users WHERE 1=1";
         $params = [];
@@ -65,7 +74,11 @@ class AdminController {
             $params[] = $type;
         }
 
-        $query .= " ORDER BY CreatedAt DESC";
+        if ($sort === 'role') {
+            $query .= " ORDER BY UserType " . strtoupper($direction) . ", Username ASC";
+        } else {
+            $query .= " ORDER BY CreatedAt " . strtoupper($direction);
+        }
 
         $stmt = $this->pdo->prepare($query);
         $stmt->execute($params);
@@ -106,11 +119,24 @@ class AdminController {
             try {
                 $this->pdo->beginTransaction();
 
-                $stmt = $this->pdo->prepare("DELETE FROM instructor_courses WHERE InstructorID = ?");
-                $stmt->execute([$user_id]);
+                if ($this->tableHasColumn('messages', 'SenderID') && $this->tableHasColumn('messages', 'ReceiverID')) {
+                    $stmt = $this->pdo->prepare("DELETE FROM messages WHERE SenderID = ? OR ReceiverID = ?");
+                    $stmt->execute([$user_id, $user_id]);
+                }
 
-                $stmt = $this->pdo->prepare("UPDATE course_contents SET CreatedBy = NULL WHERE CreatedBy = ?");
-                $stmt->execute([$user_id]);
+                $this->deleteUserRows('email_verification_tokens', 'UserID', $user_id);
+                $this->deleteUserRows('password_reset_tokens', 'UserID', $user_id);
+                $this->deleteUserRows('user_answers', 'UserID', $user_id);
+                $this->deleteUserRows('quiz_attempts', 'UserID', $user_id);
+                $this->deleteUserRows('results', 'UserID', $user_id);
+                $this->deleteUserRows('course_progress', 'UserID', $user_id);
+                $this->deleteUserRows('enrollments', 'UserID', $user_id);
+                $this->deleteUserRows('instructor_courses', 'InstructorID', $user_id);
+
+                if ($this->tableHasColumn('course_contents', 'CreatedBy')) {
+                    $stmt = $this->pdo->prepare("UPDATE course_contents SET CreatedBy = NULL WHERE CreatedBy = ?");
+                    $stmt->execute([$user_id]);
+                }
 
                 $stmt = $this->pdo->prepare("DELETE FROM users WHERE UserID = ?");
                 $stmt->execute([$user_id]);
@@ -121,7 +147,8 @@ class AdminController {
                 if ($this->pdo->inTransaction()) {
                     $this->pdo->rollBack();
                 }
-                $_SESSION['error'] = "Could not delete that account. Please remove related records and try again.";
+                error_log("Admin user delete failed: " . $e->getMessage());
+                $_SESSION['error'] = "Could not delete that account. Please try again.";
             }
         }
 
@@ -370,6 +397,15 @@ class AdminController {
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    private function deleteUserRows($table, $column, $userId) {
+        if (!$this->tableHasColumn($table, $column)) {
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("DELETE FROM {$table} WHERE {$column} = ?");
+        $stmt->execute([$userId]);
     }
 
     private function getTotalUsers($range = null) {
