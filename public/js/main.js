@@ -95,6 +95,119 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // ========================================
+    // IMAGE ERROR HANDLING - Fix broken images
+    // ========================================
+    function initImageErrorHandling() {
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            // Create a function to handle the error
+            const handleImageError = function() {
+                if (this.hasAttribute('data-error-handled')) {
+                    return; // Already handled
+                }
+                this.setAttribute('data-error-handled', 'true');
+                this.style.display = 'none';
+
+                // Create a gradient placeholder div
+                const placeholder = document.createElement('div');
+                placeholder.className = 'image-placeholder';
+                const width = this.width || this.parentElement.offsetWidth || 200;
+                const height = this.height || 160;
+                
+                placeholder.style.cssText = `
+                    width: 100%;
+                    height: ${height}px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    border-radius: ${this.className.includes('card-img-top') ? '0.375rem' : '0'};
+                    position: relative;
+                    overflow: hidden;
+                `;
+                
+                // Add icon and text
+                placeholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="bi bi-image" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem; opacity: 0.8;"></i>
+                        <small style="font-size: 0.85rem; opacity: 0.9;">Image unavailable</small>
+                    </div>
+                `;
+                
+                // Insert placeholder before the image or replace it in the DOM
+                if (this.parentNode) {
+                    this.parentNode.insertBefore(placeholder, this);
+                }
+            };
+
+            // Attach error handler
+            img.addEventListener('error', handleImageError, { once: true });
+            
+            // Also check if image is already broken (cached/preloaded)
+            if (img.complete && !img.naturalHeight) {
+                handleImageError.call(img);
+            }
+        });
+    }
+
+    // Initialize image error handling immediately and after dynamic content loads
+    initImageErrorHandling();
+    
+    // Re-run for dynamically added images
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+                const newImages = mutation.target.querySelectorAll('img');
+                newImages.forEach(img => {
+                    if (!img.hasAttribute('data-error-initialized')) {
+                        img.setAttribute('data-error-initialized', 'true');
+                        img.addEventListener('error', function() {
+                            if (this.hasAttribute('data-error-handled')) return;
+                            this.setAttribute('data-error-handled', 'true');
+                            this.style.display = 'none';
+                            
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'image-placeholder';
+                            const height = this.height || 160;
+                            
+                            placeholder.style.cssText = `
+                                width: 100%;
+                                height: ${height}px;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-weight: bold;
+                                border-radius: 0.375rem;
+                            `;
+                            
+                            placeholder.innerHTML = `
+                                <div style="text-align: center;">
+                                    <i class="bi bi-image" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                                    <small>Image unavailable</small>
+                                </div>
+                            `;
+                            
+                            if (this.parentNode) {
+                                this.parentNode.insertBefore(placeholder, this);
+                            }
+                        }, { once: true });
+                    }
+                });
+            }
+        });
+    });
+
+    // Observe the document for new images
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
     // Enable Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
