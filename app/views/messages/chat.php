@@ -102,10 +102,12 @@ $userType = $_SESSION['user_type'];
 }
 
 .message-sent {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
     color: #ffffff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
+    opacity: 1;
+    background-attachment: fixed;
 }
 
 .message-received {
@@ -499,6 +501,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const text = messageInput.value.trim();
             if (text === '') return;
 
+            // Disable submit button to prevent duplicate submissions
+            const submitBtn = chatForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.6';
+            }
+
             // Clear input box immediately for snappy user experience
             messageInput.value = '';
 
@@ -523,6 +532,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: 'Oops...',
                         text: data.message || 'Failed to send message.'
                     });
+                    // Re-enable button on error
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                    }
                 }
             })
             .catch(error => {
@@ -532,6 +546,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: 'Connection Error',
                     text: 'Unable to connect to the server.'
                 });
+                // Re-enable button on error
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                }
             });
         });
     }

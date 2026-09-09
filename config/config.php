@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/database_compat.php';
 require_once __DIR__ . '/CookieSessionHandler.php';
+require_once __DIR__ . '/languages.php';
 
 /* -----------------------------
    LOAD ENV FILE (IF EXISTS)

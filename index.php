@@ -274,6 +274,14 @@ switch ($page) {
         $feedbackCtrl->sendStudentFeedback();
         break;
 
+    case 'set-language':
+        $lang = $_GET['lang'] ?? 'en';
+        setLanguage($lang);
+        $redirect = $_GET['redirect'] ?? 'index.php?page=dashboard';
+        header("Location: $redirect");
+        exit;
+        break;
+
     default:
         // Handle 404
         echo "404 Page Not Found";

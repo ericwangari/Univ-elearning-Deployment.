@@ -547,13 +547,12 @@ class InstructorController {
         $stats_sql = "SELECT q.QuizType, COUNT(*) as count
                       FROM results r
                       JOIN quizzes q ON r.QuizID = q.QuizID
-                      JOIN courses c ON r.CourseID = c.CourseID
-                      JOIN users u ON r.UserID = u.UserID
+                      JOIN courses c ON q.CourseID = c.CourseID
                       JOIN instructor_courses ic ON c.CourseID = ic.CourseID
                       WHERE ic.InstructorID = ?";
         $stats_params = [$instructor_id];
         if ($selected_course_id) {
-            $stats_sql .= " AND r.CourseID = ?";
+            $stats_sql .= " AND q.CourseID = ?";
             $stats_params[] = $selected_course_id;
         }
         if ($assessment_type !== '') {
@@ -561,7 +560,7 @@ class InstructorController {
             $stats_params[] = $assessment_type;
         }
         if ($search !== '') {
-            $stats_sql .= " AND (u.Username LIKE ? OR c.CourseName LIKE ?)";
+            $stats_sql .= " AND (r.UserID IN (SELECT UserID FROM users WHERE Username LIKE ?) OR c.CourseName LIKE ?)";
             $stats_params[] = '%' . $search . '%';
             $stats_params[] = '%' . $search . '%';
         }
@@ -595,11 +594,11 @@ class InstructorController {
                         FROM (
                             SELECT UserID, QuizID, CourseID, MAX(Score) AS Score
                             FROM results
-                            GROUP BY UserID, QuizID, CourseID
+                            GROUP BY UserID, CourseID, QuizID
                         ) best
                         JOIN users u ON best.UserID = u.UserID
                         JOIN quizzes q ON best.QuizID = q.QuizID
-                        JOIN courses c ON best.CourseID = c.CourseID
+                        JOIN courses c ON best.CourseID = c.CourseID AND q.CourseID = c.CourseID
                         JOIN instructor_courses ic ON c.CourseID = ic.CourseID
                         WHERE ic.InstructorID = ?";
         $results_params = [$instructor_id];
