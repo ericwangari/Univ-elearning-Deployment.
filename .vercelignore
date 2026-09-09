@@ -31,5 +31,4 @@ Procfile
 
 .npm-cache/
 .vercel-cli/
-.vercel/
 .tools/
