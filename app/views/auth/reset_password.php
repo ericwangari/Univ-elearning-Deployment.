@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password - <?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></title>
-    <link rel="icon" type="image/png" href="public/images/icons/icon-192.png">
-    <link rel="apple-touch-icon" href="public/images/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="/images/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=14">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
 </head>
@@ -19,7 +19,7 @@
         <div class="row w-100 m-0">
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
-                    <img src="public/images/books.png" alt="Reset password" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
+                    <img src="/images/books.png" alt="Reset password" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
                     <p class="lead fw-normal text-white-50">Choose a new password for your account.</p>
                 </div>
@@ -100,6 +100,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="public/js/main.js"></script>
+    <script src="/js/main.js?v=14"></script>
 </body>
 </html>

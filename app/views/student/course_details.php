@@ -23,7 +23,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 </p>
             </div>
             <div class="text-end d-none d-md-block">
-                <img src="public/images/books.png" alt="Course" style="height: 180px; object-fit: contain;">
+                <img src="/images/books.png" alt="Course" style="height: 180px; object-fit: contain;">
             </div>
         </div>
     </div>
@@ -45,9 +45,9 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                             <?php if ($content['ContentType'] === 'Text'): ?>
                                 <?php
                                     $returnUrl = 'index.php?page=course-details&id=' . urlencode($course['CourseID']);
-                                    $materialUrl = $content['MaterialURL'] ?? ('public/course_material.php?title=' . urlencode($course['CourseName'] . ': ' . $content['ContentTitle']));
+                                    $materialUrl = $content['MaterialURL'] ?? ('/course_material.php?title=' . urlencode($course['CourseName'] . ': ' . $content['ContentTitle']));
                                     $materialUrl .= (strpos($materialUrl, '?') === false ? '?' : '&') . 'return=' . urlencode('../' . $returnUrl);
-                                    $pdfUrl = $content['PdfURL'] ?? ('public/course_pdf.php?title=' . urlencode($course['CourseName'] . ': ' . $content['ContentTitle']) . '&body=' . urlencode($content['ContentURL'] ?? 'Course handout'));
+                                    $pdfUrl = $content['PdfURL'] ?? ('/course_pdf.php?title=' . urlencode($course['CourseName'] . ': ' . $content['ContentTitle']) . '&body=' . urlencode($content['ContentURL'] ?? 'Course handout'));
                                 ?>
                                 <div class="list-group-item py-3">
                                     <div class="d-flex justify-content-between align-items-start gap-3">

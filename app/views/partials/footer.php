@@ -68,6 +68,6 @@
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
 <!-- Custom JS -->
-<script src="public/js/main.js?v=13"></script>
+<script src="/js/main.js?v=14"></script>
 </body>
 </html>

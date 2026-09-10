@@ -1,10 +1,10 @@
-const CACHE_NAME = 'univ-elearning-v11';
+const CACHE_NAME = 'univ-elearning-v14';
 const STATIC_ASSETS = [
-  './public/css/style.css?v=11',
-  './public/js/main.js?v=11',
+  '/css/style.css?v=14',
+  '/js/main.js?v=14',
   './manifest.json',
-  './public/images/icons/icon-192.png',
-  './public/images/icons/icon-512.png'
+  '/images/icons/icon-192.png',
+  '/images/icons/icon-512.png'
 ];
 
 // Install Event - Cache static assets

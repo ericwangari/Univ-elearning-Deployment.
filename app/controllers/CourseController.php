@@ -343,8 +343,8 @@ class CourseController {
 
         foreach ($lessons as $lesson) {
             $titleSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $lesson[0]));
-            $materialUrl = 'public/course_material.php?title=' . urlencode($courseName . ': ' . $lesson[0]);
-            $pdfUrl = 'public/course_pdf.php?title=' . urlencode($courseName . ': ' . $lesson[0]) . '&body=' . urlencode($lesson[1]);
+            $materialUrl = '/course_material.php?title=' . urlencode($courseName . ': ' . $lesson[0]);
+            $pdfUrl = '/course_pdf.php?title=' . urlencode($courseName . ': ' . $lesson[0]) . '&body=' . urlencode($lesson[1]);
 
             if (strpos(strtolower($courseName), 'design') !== false || strpos(strtolower($courseName), 'ui/ux') !== false) {
                 $uiuxMap = [
@@ -352,7 +352,7 @@ class CourseController {
                     'layout-hierarchy-and-contrast' => 'layout',
                     'prototyping-and-testing' => 'testing',
                 ];
-                $materialUrl = 'public/course_material.php?course=uiux&lesson=' . ($uiuxMap[$titleSlug] ?? 'research');
+                $materialUrl = '/course_material.php?course=uiux&lesson=' . ($uiuxMap[$titleSlug] ?? 'research');
             }
 
             $formatted[] = [

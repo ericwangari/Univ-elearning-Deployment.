@@ -22,7 +22,7 @@ if (empty($current_page)) {
 <div id="wrapper" class="d-flex">
     <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
         <div class="sidebar-heading border-bottom p-3 fs-5 fw-bold text-center text-primary">
-            <img src="public/images/icons/icon-192.png" alt="UnivLearn" class="sidebar-logo me-2" width="32" height="32" style="width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;">
+            <img src="/images/icons/icon-192.png" alt="UnivLearn" class="sidebar-logo me-2" width="32" height="32" style="width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;">
             <span class="sidebar-brand-text">Univ<span class="text-white">Learn</span></span>
             <button type="button" class="btn btn-sm btn-outline-light sidebar-close-btn d-lg-none" id="sidebar-close" aria-label="Close navigation">
                 <i class="bi bi-x-lg"></i>
