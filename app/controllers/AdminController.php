@@ -192,9 +192,7 @@ class AdminController {
             }
 
             if (empty($errors)) {
-                $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?)");
-                $stmt->execute([$course_name, $description]);
-                $course_id = $this->pdo->lastInsertId();
+                $course_id = $this->insertCourse($course_name, $description);
 
                 if ($instructor_id !== '') {
                     $stmt = $this->pdo->prepare("INSERT IGNORE INTO instructor_courses (InstructorID, CourseID) VALUES (?, ?)");
@@ -480,5 +478,18 @@ class AdminController {
                                    WHERE UserType = 'Instructor' AND Status = 'Approved' 
                                    ORDER BY Username");
         return $stmt->fetchAll();
+    }
+
+    private function insertCourse($courseName, $description) {
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?) RETURNING CourseID");
+            $stmt->execute([$courseName, $description]);
+            $row = $stmt->fetch();
+            return $row['CourseID'] ?? null;
+        }
+
+        $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?)");
+        $stmt->execute([$courseName, $description]);
+        return $this->pdo->lastInsertId();
     }
 }

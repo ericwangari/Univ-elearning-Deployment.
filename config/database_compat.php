@@ -43,7 +43,11 @@ class AppPDOStatement {
             'instructorid'=>'InstructorID','assignedat'=>'AssignedAt','progressid'=>'ProgressID','completedlessons'=>'CompletedLessons','totallessons'=>'TotalLessons',
             'lastaccessedat'=>'LastAccessedAt','messageid'=>'MessageID','senderid'=>'SenderID','receiverid'=>'ReceiverID','messagetext'=>'MessageText',
             'content'=>'Content','sentat'=>'SentAt','isread'=>'IsRead','totalquizzes'=>'TotalQuizzes','completedquizzes'=>'CompletedQuizzes',
-            'studentcount'=>'StudentCount','attemptcount'=>'AttemptCount'
+            'studentcount'=>'StudentCount','attemptcount'=>'AttemptCount','instructornames'=>'InstructorNames',
+            'enrollmentcount'=>'EnrollmentCount','quizcount'=>'QuizCount','studentnames'=>'StudentNames',
+            'quizscore'=>'QuizScore','quiztotal'=>'QuizTotal','midtermscore'=>'MidtermScore','midtermtotal'=>'MidtermTotal',
+            'finalscore'=>'FinalScore','finaltotal'=>'FinalTotal','assignmentscore'=>'AssignmentScore',
+            'assignmenttotal'=>'AssignmentTotal','totalattempts'=>'TotalAttempts','failedattempts'=>'FailedAttempts'
         ];
         foreach ($row as $key => $value) {
             if (is_string($key)) {

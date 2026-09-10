@@ -36,7 +36,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
         <?php if (empty($enrollments)): ?>
             <div class="col-12 text-center py-5">
                 <div class="p-5 bg-white rounded shadow-sm">
-                    <img src="https://illustrations.popsy.co/white/abstract-art-4.svg" alt="Empty" class="img-fluid mb-4" style="max-height: 250px;">
+                    <img src="public/images/books.png" alt="Empty" class="img-fluid mb-4" style="max-height: 250px; object-fit: contain;">
                     <h4>You haven't enrolled in any courses yet</h4>
                     <p class="text-muted mb-4">Discover new skills by browsing our course catalog.</p>
                     <a href="?page=courses" class="btn btn-primary">Browse Catalog</a>
@@ -47,7 +47,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 border-0 shadow-sm overflow-hidden">
                         <div class="position-relative">
-                            <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=400&h=150&auto=format&fit=crop" class="card-img-top" alt="Course" style="height: 140px; object-fit: cover;">
+                            <img src="public/images/books.png" class="card-img-top bg-light" alt="Course" style="height: 140px; object-fit: contain; padding: 1rem;">
                             <div class="position-absolute top-0 end-0 p-2">
                                 <span class="badge <?php echo ($enrollment['CompletionStatus'] == 'Completed') ? 'bg-success' : 'bg-primary'; ?> rounded-pill">
                                     <?php echo $enrollment['CompletionStatus']; ?>
@@ -90,4 +90,3 @@ include __DIR__ . '/../partials/sidebar_v2.php';
 </div>
 
 <?php include __DIR__ . '/../partials/footer.php'; ?>
-

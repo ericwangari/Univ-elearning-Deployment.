@@ -57,13 +57,10 @@ class InstructorController {
             $course_name = $_POST['course_name'] ?? '';
             $description = $_POST['description'] ?? '';
             if (!empty($course_name)) {
-                $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?)");
-                $stmt->execute([$course_name, $description]);
-
-                $course_id = $this->pdo->lastInsertId();
+                $course_id = $this->insertCourse($course_name, $description);
 
                 // Assign course to instructor
-                $stmt = $this->pdo->prepare("INSERT INTO instructor_courses (InstructorID, CourseID) VALUES (?, ?)");
+                $stmt = $this->pdo->prepare("INSERT IGNORE INTO instructor_courses (InstructorID, CourseID) VALUES (?, ?)");
                 $stmt->execute([$_SESSION['user_id'], $course_id]);
 
                 header("Location: index.php?page=manage-courses");
@@ -819,5 +816,18 @@ class InstructorController {
                                      WHERE ic.InstructorID = ? AND q.QuizType = ?");
         $stmt->execute([$instructor_id, $type]);
         return $stmt->fetchColumn();
+    }
+
+    private function insertCourse($courseName, $description) {
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?) RETURNING CourseID");
+            $stmt->execute([$courseName, $description]);
+            $row = $stmt->fetch();
+            return $row['CourseID'] ?? null;
+        }
+
+        $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?)");
+        $stmt->execute([$courseName, $description]);
+        return $this->pdo->lastInsertId();
     }
 }

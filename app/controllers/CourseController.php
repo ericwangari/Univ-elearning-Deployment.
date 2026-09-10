@@ -159,14 +159,14 @@ class CourseController {
         require __DIR__ . '/../views/student/courses.php';
     }
 
-    public function courseDetails() {
+    public function courseDetails($course_id = null) {
         if (!isset($_SESSION['user_id'])) {
             header("Location: index.php?page=login");
             exit;
         }
 
         $user_id = $_SESSION['user_id'];
-        $course_id = $_GET['id'] ?? null;
+        $course_id = $course_id ?? ($_GET['id'] ?? null);
 
         // Get course
         $stmt = $this->pdo->prepare("SELECT c.*, COUNT(DISTINCT e.EnrollmentID) as StudentCount,
@@ -194,6 +194,10 @@ class CourseController {
         $stmt = $this->pdo->prepare("SELECT * FROM course_contents WHERE CourseID = ? ORDER BY ContentID");
         $stmt->execute([$course_id]);
         $contents = $stmt->fetchAll();
+
+        if ($this->shouldUseBuiltInLearningContent($contents)) {
+            $contents = $this->getBuiltInLearningContent($course['CourseName']);
+        }
 
         // Get quizzes
         $stmt = $this->pdo->prepare("SELECT * FROM quizzes WHERE CourseID = ? ORDER BY QuizID");
@@ -508,7 +512,7 @@ class CourseController {
             $stmt->execute([$user_id, $course_id]);
 
             if (!$stmt->fetch()) {
-                $stmt = $this->pdo->prepare("INSERT INTO enrollments (UserID, CourseID) VALUES (?, ?)");
+                $stmt = $this->pdo->prepare("INSERT IGNORE INTO enrollments (UserID, CourseID) VALUES (?, ?)");
                 $stmt->execute([$user_id, $course_id]);
             }
         }

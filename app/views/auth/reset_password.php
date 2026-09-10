@@ -19,7 +19,7 @@
         <div class="row w-100 m-0">
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
-                    <img src="https://illustrations.popsy.co/white/student.svg" alt="Reset password" class="img-fluid mb-5" style="max-height: 350px; drop-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    <img src="public/images/books.png" alt="Reset password" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
                     <p class="lead fw-normal text-white-50">Choose a new password for your account.</p>
                 </div>

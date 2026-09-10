@@ -2,6 +2,16 @@
 // app/views/partials/sidebar_v2.php
 $user_type = $_SESSION['user_type'] ?? 'Student';
 $current_page = $_GET['page'] ?? '';
+$languageNames = [
+    'en' => 'English',
+    'es' => 'Espanol',
+    'fr' => 'Francais',
+    'de' => 'Deutsch',
+    'ar' => 'Arabic',
+    'sw' => 'Swahili',
+];
+$currentLanguage = getCurrentLanguage();
+$currentUrl = $_SERVER['REQUEST_URI'] ?? 'index.php?page=dashboard';
 
 // If no page is set but we are on the default route, consider it dashboard
 if (empty($current_page)) {
@@ -12,7 +22,7 @@ if (empty($current_page)) {
 <div id="wrapper" class="d-flex">
     <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
         <div class="sidebar-heading border-bottom p-3 fs-5 fw-bold text-center text-primary">
-            <img src="public/images/logo.png" alt="UnivLearn" class="sidebar-logo me-2" width="32" height="32" style="width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;">
+            <img src="public/images/icons/icon-192.png" alt="UnivLearn" class="sidebar-logo me-2" width="32" height="32" style="width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;">
             <span class="sidebar-brand-text">Univ<span class="text-white">Learn</span></span>
             <button type="button" class="btn btn-sm btn-outline-light sidebar-close-btn d-lg-none" id="sidebar-close" aria-label="Close navigation">
                 <i class="bi bi-x-lg"></i>
@@ -20,47 +30,47 @@ if (empty($current_page)) {
         </div>
     <div class="list-group list-group-flush p-3">
         <a href="?page=dashboard" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo (in_array($current_page, ['dashboard', 'instructor-dashboard', 'admin-dashboard'])) ? 'active bg-primary' : ''; ?>">
-            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+            <i class="bi bi-speedometer2 me-2"></i> <?php echo __('nav_dashboard'); ?>
         </a>
         
         <?php if ($user_type === 'Admin'): ?>
             <a href="?page=admin-users" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'admin-users') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-people me-2"></i> Manage Users
+                <i class="bi bi-people me-2"></i> <?php echo __('user_management'); ?>
             </a>
             <a href="?page=manage-instructors" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'manage-instructors') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-person-check me-2"></i> Instructor Approvals
             </a>
             <a href="?page=admin-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'admin-courses') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-book me-2"></i> Manage Courses
+                <i class="bi bi-book me-2"></i> <?php echo __('nav_courses'); ?>
             </a>
         <?php elseif ($user_type === 'Instructor'): ?>
             <a href="?page=manage-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'manage-courses') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-journal-text me-2"></i> My Courses
             </a>
             <a href="?page=student-results" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'student-results') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-award me-2"></i> Student Results
+                <i class="bi bi-award me-2"></i> <?php echo __('student_results'); ?>
             </a>
             <a href="?page=messages" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'messages') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-chat-dots me-2"></i> Messages
+                <i class="bi bi-chat-dots me-2"></i> <?php echo __('nav_messages'); ?>
             </a>
         <?php elseif ($user_type === 'Student'): ?>
             <a href="?page=courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'courses') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-search me-2"></i> Browse Courses
+                <i class="bi bi-search me-2"></i> <?php echo __('nav_courses'); ?>
             </a>
             <a href="?page=my-enrollments" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'my-enrollments') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-mortarboard me-2"></i> My Learning
             </a>
             <a href="?page=my-results" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'my-results') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-card-checklist me-2"></i> My Results
+                <i class="bi bi-card-checklist me-2"></i> <?php echo __('nav_results'); ?>
             </a>
             <a href="?page=messages" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'messages') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-chat-dots me-2"></i> Messages
+                <i class="bi bi-chat-dots me-2"></i> <?php echo __('nav_messages'); ?>
             </a>
         <?php endif; ?>
 
         <hr class="bg-light">
         <a href="?page=logout" class="list-group-item list-group-item-action bg-dark text-danger border-0 py-3 rounded">
-            <i class="bi bi-box-arrow-right me-2"></i> Logout
+            <i class="bi bi-box-arrow-right me-2"></i> <?php echo __('nav_logout'); ?>
         </a>
     </div>
 </div>
@@ -77,7 +87,18 @@ if (empty($current_page)) {
                 <span class="navbar-text fw-medium">
                     Welcome back, <span class="text-primary"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Guest'); ?></span> (<?php echo $_SESSION['user_type'] ?? 'Student'; ?>)
                 </span>
-            <div class="ms-auto">
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <form method="GET" action="index.php" class="d-none d-sm-block">
+                    <input type="hidden" name="page" value="set-language">
+                    <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($currentUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                    <select name="lang" class="form-select form-select-sm" aria-label="Language" onchange="this.form.submit()">
+                        <?php foreach (AVAILABLE_LANGUAGES as $languageCode): ?>
+                            <option value="<?php echo htmlspecialchars($languageCode, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $currentLanguage === $languageCode ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($languageNames[$languageCode] ?? strtoupper($languageCode), ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
                 <span class="text-muted small"><?php echo date('D, M j, Y'); ?></span>
             </div>
         </div>

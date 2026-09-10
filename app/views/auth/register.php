@@ -109,7 +109,7 @@
             <!-- Right Side: Image/Branding -->
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
-                    <img src="https://illustrations.popsy.co/white/freelancer.svg" alt="Register" class="img-fluid mb-5" style="max-height: 350px; drop-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    <img src="public/images/books.png" alt="Register" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h2 class="display-6 fw-bold mb-3">Unlock Your Potential</h2>
                     <p class="lead fw-normal text-white-50 px-5">Get unlimited access to top-tier courses, expert instructors, and a community of ambitious learners.</p>
                 </div>

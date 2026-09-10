@@ -101,6 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initImageErrorHandling() {
         const images = document.querySelectorAll('img');
         images.forEach(img => {
+            if (img.hasAttribute('data-error-initialized')) {
+                return;
+            }
+            img.setAttribute('data-error-initialized', 'true');
+
             // Create a function to handle the error
             const handleImageError = function() {
                 if (this.hasAttribute('data-error-handled')) {
@@ -112,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Create a gradient placeholder div
                 const placeholder = document.createElement('div');
                 placeholder.className = 'image-placeholder';
-                const width = this.width || this.parentElement.offsetWidth || 200;
                 const height = this.height || 160;
                 
                 placeholder.style.cssText = `
@@ -160,44 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.addedNodes.length) {
-                const newImages = mutation.target.querySelectorAll('img');
-                newImages.forEach(img => {
-                    if (!img.hasAttribute('data-error-initialized')) {
-                        img.setAttribute('data-error-initialized', 'true');
-                        img.addEventListener('error', function() {
-                            if (this.hasAttribute('data-error-handled')) return;
-                            this.setAttribute('data-error-handled', 'true');
-                            this.style.display = 'none';
-                            
-                            const placeholder = document.createElement('div');
-                            placeholder.className = 'image-placeholder';
-                            const height = this.height || 160;
-                            
-                            placeholder.style.cssText = `
-                                width: 100%;
-                                height: ${height}px;
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                color: white;
-                                font-weight: bold;
-                                border-radius: 0.375rem;
-                            `;
-                            
-                            placeholder.innerHTML = `
-                                <div style="text-align: center;">
-                                    <i class="bi bi-image" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
-                                    <small>Image unavailable</small>
-                                </div>
-                            `;
-                            
-                            if (this.parentNode) {
-                                this.parentNode.insertBefore(placeholder, this);
-                            }
-                        }, { once: true });
-                    }
-                });
+                initImageErrorHandling();
             }
         });
     });
@@ -209,10 +176,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enable Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    }
 
     // Form Validation logic
     const forms = document.querySelectorAll('.needs-validation');

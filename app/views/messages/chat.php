@@ -102,12 +102,12 @@ $userType = $_SESSION['user_type'];
 }
 
 .message-sent {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    background-color: #4f46e5 !important;
+    background-image: none !important;
     color: #ffffff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
     opacity: 1;
-    background-attachment: fixed;
 }
 
 .message-received {
@@ -369,7 +369,7 @@ $userType = $_SESSION['user_type'];
                     <form id="chatForm" class="d-flex gap-2">
                         <input type="hidden" id="receiverId" value="<?= $activeContact['UserID'] ?>">
                         <input type="text" id="messageInput" class="form-control border-0 bg-light py-3 px-4" placeholder="Type a message..." autocomplete="off" required>
-                        <button type="submit" class="btn btn-primary px-4 d-flex align-items-center justify-content-center">
+                        <button type="submit" id="sendMessageButton" class="btn btn-primary px-4 d-flex align-items-center justify-content-center">
                             <i class="bi bi-send-fill fs-5"></i>
                         </button>
                     </form>
@@ -421,6 +421,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let lastMessageId = 0;
         let isFirstLoad = true;
         let pollTimer = null;
+        let isPolling = false;
+        let isSending = false;
+        const renderedMessageIds = new Set();
 
         // Formats database timestamp to human-friendly local time
         function formatTime(timestampString) {
@@ -435,6 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Fetches message updates from the server
         function fetchMessages() {
+            if (isPolling) return;
+            isPolling = true;
             const url = `?page=api-get-messages&contact_id=${receiverId}&since_id=${lastMessageId}`;
             
             fetch(url)
@@ -444,6 +449,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         let hasNewMessages = false;
                         
                         data.messages.forEach(msg => {
+                            const messageId = Number(msg.MessageID);
+                            if (renderedMessageIds.has(messageId)) {
+                                if (messageId > lastMessageId) {
+                                    lastMessageId = messageId;
+                                }
+                                return;
+                            }
+
+                            const emptyState = messagesArea.querySelector('.empty-conversation-state');
+                            if (emptyState) {
+                                emptyState.remove();
+                            }
+
+                            renderedMessageIds.add(messageId);
                             const isMe = msg.SenderID != receiverId;
                             const bubbleClass = isMe ? 'message-sent' : 'message-received';
                             
@@ -461,8 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             messagesArea.appendChild(msgDiv);
                             
-                            if (msg.MessageID > lastMessageId) {
-                                lastMessageId = msg.MessageID;
+                            if (messageId > lastMessageId) {
+                                lastMessageId = messageId;
                             }
                             hasNewMessages = true;
                         });
@@ -475,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (isFirstLoad) {
                         // Empty conversation state
                         messagesArea.innerHTML = `
-                            <div class="text-center text-muted my-auto py-5">
+                            <div class="empty-conversation-state text-center text-muted my-auto py-5">
                                 <i class="bi bi-chat-left-dots fs-1 mb-2 d-block text-primary" style="opacity:0.5;"></i>
                                 No messages yet. Say hello to start the conversation!
                             </div>
@@ -487,6 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Failed to load messages:', error);
                 })
                 .finally(() => {
+                    isPolling = false;
                     // Schedule next poll in 2 seconds
                     pollTimer = setTimeout(fetchMessages, 2000);
                 });
@@ -499,10 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
         chatForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const text = messageInput.value.trim();
-            if (text === '') return;
+            if (text === '' || isSending) return;
+            isSending = true;
 
             // Disable submit button to prevent duplicate submissions
-            const submitBtn = chatForm.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('sendMessageButton');
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.style.opacity = '0.6';
@@ -532,11 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: 'Oops...',
                         text: data.message || 'Failed to send message.'
                     });
-                    // Re-enable button on error
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.style.opacity = '1';
-                    }
+                    messageInput.value = text;
                 }
             })
             .catch(error => {
@@ -546,7 +563,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: 'Connection Error',
                     text: 'Unable to connect to the server.'
                 });
-                // Re-enable button on error
+                messageInput.value = text;
+            })
+            .finally(() => {
+                isSending = false;
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.style.opacity = '1';

@@ -28,17 +28,26 @@ include __DIR__ . '/../partials/sidebar_v2.php';
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-3">
             <div class="row g-3">
-
-                    <form method="GET" class="input-group d-none">
+                <div class="col-md-8">
+                    <form method="GET" class="input-group">
                         <input type="hidden" name="page" value="admin-users">
                         <input type="text" class="form-control" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+                        <?php if (!empty($type)): ?>
+                            <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
+                        <?php endif; ?>
+                        <?php if (!empty($sort)): ?>
+                            <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                        <?php endif; ?>
+                        <?php if (!empty($direction)): ?>
+                            <input type="hidden" name="direction" value="<?php echo htmlspecialchars($direction); ?>">
+                        <?php endif; ?>
                         <button class="btn btn-outline-secondary" type="submit">
                             <i class="bi bi-search"></i> Search
                         </button>
                     </form>
                 </div>
-                <div class="col-md-12">
-                    <select class="form-select" onchange="window.location='?page=admin-users&type=' + this.value">
+                <div class="col-md-4">
+                    <select class="form-select" onchange="window.location='?page=admin-users<?php echo !empty($sort) ? '&sort=' . urlencode($sort) : ''; ?><?php echo !empty($direction) ? '&direction=' . urlencode($direction) : ''; ?>&type=' + encodeURIComponent(this.value)">
                         <option value="">All User Types</option>
                         <option value="Admin" <?php echo (($_GET['type'] ?? '') === 'Admin') ? 'selected' : ''; ?>>Admin</option>
                         <option value="Instructor" <?php echo (($_GET['type'] ?? '') === 'Instructor') ? 'selected' : ''; ?>>Instructor</option>

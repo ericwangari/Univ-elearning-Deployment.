@@ -182,20 +182,54 @@ class MessageController {
             exit;
         }
 
-        // Insert message
+        $duplicateStmt = $this->pdo->prepare("
+            SELECT *
+            FROM messages
+            WHERE SenderID = ? AND ReceiverID = ? AND MessageText = ?
+            ORDER BY SentAt DESC, MessageID DESC
+            LIMIT 1
+        ");
+        $duplicateStmt->execute([$myId, $receiverId, $messageText]);
+        $duplicate = $duplicateStmt->fetch();
+        if ($duplicate && !empty($duplicate['SentAt'])) {
+            try {
+                $sentAt = new DateTime($duplicate['SentAt']);
+                $secondsAgo = time() - $sentAt->getTimestamp();
+                if ($secondsAgo >= 0 && $secondsAgo <= 5) {
+                    echo json_encode(['status' => 'success', 'message' => $duplicate]);
+                    exit;
+                }
+            } catch (Exception $e) {
+                // If the timestamp cannot be parsed, continue with the normal insert.
+            }
+        }
+
+        $message = $this->insertMessage($myId, $receiverId, $messageText);
+
+        echo json_encode(['status' => 'success', 'message' => $message]);
+        exit;
+    }
+
+    private function insertMessage($senderId, $receiverId, $messageText) {
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
+            $insertStmt = $this->pdo->prepare("
+                INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead)
+                VALUES (?, ?, ?, 0)
+                RETURNING *
+            ");
+            $insertStmt->execute([$senderId, $receiverId, $messageText]);
+            return $insertStmt->fetch();
+        }
+
         $insertStmt = $this->pdo->prepare("
             INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead)
             VALUES (?, ?, ?, 0)
         ");
-        $insertStmt->execute([$myId, $receiverId, $messageText]);
+        $insertStmt->execute([$senderId, $receiverId, $messageText]);
         $messageId = $this->pdo->lastInsertId();
 
-        // Get inserted message details
         $msgStmt = $this->pdo->prepare("SELECT * FROM messages WHERE MessageID = ?");
         $msgStmt->execute([$messageId]);
-        $message = $msgStmt->fetch();
-
-        echo json_encode(['status' => 'success', 'message' => $message]);
-        exit;
+        return $msgStmt->fetch();
     }
 }

@@ -192,8 +192,7 @@ try {
 }
 
 
-// Schema maintenance: add missing tables on MySQL only.
-// On PostgreSQL (Supabase) these are already created via schema_pgsql.sql.
+// Schema maintenance: add missing tables the app depends on.
 if (DB_DRIVER !== 'pgsql') {
     $schemaUpdates = [
         "CREATE TABLE IF NOT EXISTS instructor_courses (
@@ -247,6 +246,32 @@ if (DB_DRIVER !== 'pgsql') {
             $pdo->exec($schemaUpdate);
         } catch (Exception $e) {
             error_log("Schema maintenance warning: " . $e->getMessage());
+        }
+    }
+} else {
+    $schemaUpdates = [
+        "CREATE TABLE IF NOT EXISTS instructor_courses (
+            instructorcourseid SERIAL PRIMARY KEY,
+            instructorid INT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+            courseid INT NOT NULL REFERENCES courses(courseid) ON DELETE CASCADE,
+            assignedat TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (instructorid, courseid)
+        )",
+        "CREATE TABLE IF NOT EXISTS messages (
+            messageid SERIAL PRIMARY KEY,
+            senderid INT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+            receiverid INT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+            messagetext TEXT NOT NULL,
+            sentat TIMESTAMP NOT NULL DEFAULT NOW(),
+            isread BOOLEAN NOT NULL DEFAULT FALSE
+        )",
+    ];
+
+    foreach ($schemaUpdates as $schemaUpdate) {
+        try {
+            $pdo->exec($schemaUpdate);
+        } catch (Exception $e) {
+            error_log("PostgreSQL schema maintenance warning: " . $e->getMessage());
         }
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars(getCurrentLanguage(), ENT_QUOTES, 'UTF-8'); ?>"<?php echo getCurrentLanguage() === 'ar' ? ' dir="rtl"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +15,7 @@
     <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="public/css/style.css?v=11">
+    <link rel="stylesheet" href="public/css/style.css?v=13">
     <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
@@ -28,12 +28,22 @@
     </script>
 </head>
 <body class="bg-light">
+    <?php
+        $languageNames = [
+            'en' => 'English',
+            'es' => 'Espanol',
+            'fr' => 'Francais',
+            'de' => 'Deutsch',
+            'ar' => 'Arabic',
+            'sw' => 'Swahili',
+        ];
+    ?>
     <div class="auth-wrapper">
         <div class="row w-100 m-0">
             <!-- Left Side: Image/Branding -->
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
-                    <img src="https://illustrations.popsy.co/white/surreal-hourglass.svg" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; drop-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    <img src="public/images/books.png" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
                     <p class="lead fw-normal text-white-50">Master new skills. Elevate your career.<br>Join thousands of learners worldwide.</p>
                 </div>
@@ -42,12 +52,23 @@
             <!-- Right Side: Form -->
             <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5 bg-white shadow-lg animate__animated animate__fadeInRight">
                 <div class="w-100" style="max-width: 450px;">
+                    <form method="GET" action="index.php" class="d-flex justify-content-end mb-3">
+                        <input type="hidden" name="page" value="set-language">
+                        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php?page=login', ENT_QUOTES, 'UTF-8'); ?>">
+                        <select name="lang" class="form-select form-select-sm" style="max-width: 150px;" aria-label="Language" onchange="this.form.submit()">
+                            <?php foreach (AVAILABLE_LANGUAGES as $languageCode): ?>
+                                <option value="<?php echo htmlspecialchars($languageCode, ENT_QUOTES, 'UTF-8'); ?>" <?php echo getCurrentLanguage() === $languageCode ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($languageNames[$languageCode] ?? strtoupper($languageCode), ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
                     <div class="text-center mb-5">
                         <div class="d-inline-flex align-items-center justify-content-center bg-soft-primary text-primary rounded-circle mb-3" style="width: 70px; height: 70px;">
                             <i class="bi bi-person-circle fs-1"></i>
                         </div>
-                        <h2 class="fw-bold text-dark">Welcome Back</h2>
-                        <p class="text-muted">Sign in to continue your learning journey.</p>
+                        <h2 class="fw-bold text-dark"><?php echo __('login_title'); ?></h2>
+                        <p class="text-muted"><?php echo __('login_subtitle'); ?></p>
                     </div>
 
                     <?php if (isset($error)): ?>
@@ -75,14 +96,14 @@
                     <form method="POST" class="needs-validation" novalidate>
                         <div class="form-floating mb-4">
                             <input type="text" name="email" class="form-control" id="emailInput" placeholder="name@example.com" value="<?php echo htmlspecialchars($remembered_email ?? ''); ?>" required>
-                            <label for="emailInput"><i class="bi bi-envelope me-2 text-muted"></i>Email Address or Username</label>
+                            <label for="emailInput"><i class="bi bi-envelope me-2 text-muted"></i><?php echo __('email_username'); ?></label>
                             <div class="invalid-feedback">Please provide a valid email or username.</div>
                         </div>
                         
                         <div class="form-floating mb-4 position-relative">
                             <input type="password" name="password" class="form-control pe-5" id="passwordInput" placeholder="Password" required>
-                            <label for="passwordInput"><i class="bi bi-lock me-2 text-muted"></i>Password</label>
-                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 p-2 text-muted" id="togglePassword" aria-label="Show password" aria-pressed="false">
+                            <label for="passwordInput"><i class="bi bi-lock me-2 text-muted"></i><?php echo __('password'); ?></label>
+                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 p-2 text-muted" id="togglePassword" aria-label="Show password" aria-pressed="false" style="z-index: 5;">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </button>
                             <div class="invalid-feedback">Password is required.</div>
@@ -91,17 +112,17 @@
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me" value="1" <?php echo !empty($remembered_email) ? 'checked' : ''; ?>>
-                                <label class="form-check-label text-muted small" for="rememberMe">Remember me</label>
+                                <label class="form-check-label text-muted small" for="rememberMe"><?php echo __('remember_me'); ?></label>
                             </div>
-                            <a href="?page=forgot-password" class="small text-primary fw-semibold text-decoration-none">Forgot password?</a>
+                            <a href="?page=forgot-password" class="small text-primary fw-semibold text-decoration-none"><?php echo __('forgot_password'); ?></a>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100 py-3 mb-4 fw-bold shadow-sm rounded-3 fs-5 position-relative overflow-hidden group">
-                            <span class="position-relative z-1">Sign In</span>
+                            <span class="position-relative z-1"><?php echo __('sign_in'); ?></span>
                         </button>
 
                         <div class="text-center text-muted border-top pt-4">
-                            Don't have an account? <a href="?page=register" class="text-primary fw-bold text-decoration-none">Register here</a>
+                            <?php echo __('dont_have_account'); ?> <a href="?page=register" class="text-primary fw-bold text-decoration-none"><?php echo __('register_here'); ?></a>
                         </div>
                     </form>
                 </div>
@@ -111,6 +132,6 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="public/js/main.js?v=12"></script>
+    <script src="public/js/main.js?v=13"></script>
 </body>
 </html>
