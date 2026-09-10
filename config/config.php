@@ -104,6 +104,15 @@ if ($smtpPassword === '') $smtpPassword = getenv('SMTP_PASSWORD') ?: '';
 $smtpSecure = $localConfig['smtp_secure'] ?? '';
 if ($smtpSecure === '') $smtpSecure = getenv('SMTP_SECURE') ?: 'tls';
 
+$googleClientId = $localConfig['google_client_id'] ?? '';
+if ($googleClientId === '') $googleClientId = getenv('GOOGLE_CLIENT_ID') ?: '';
+
+$googleClientSecret = $localConfig['google_client_secret'] ?? '';
+if ($googleClientSecret === '') $googleClientSecret = getenv('GOOGLE_CLIENT_SECRET') ?: '';
+
+$googleRedirectUri = $localConfig['google_redirect_uri'] ?? '';
+if ($googleRedirectUri === '') $googleRedirectUri = getenv('GOOGLE_REDIRECT_URI') ?: '';
+
 define('MAIL_FROM', $mailFrom);
 define('MAIL_FROM_NAME', $mailFromName);
 define('SMTP_HOST', $smtpHost);
@@ -113,6 +122,9 @@ define('SMTP_PASSWORD', $smtpPassword);
 define('SMTP_SECURE', strtolower($smtpSecure));
 define('PLATFORM_FEEDBACK_EMAIL', $localConfig['platform_feedback_email'] ?? getenv('PLATFORM_FEEDBACK_EMAIL') ?: 'univelearning01@gmail.com');
 define('SUPPORT_EMAIL', $localConfig['support_email'] ?? getenv('SUPPORT_EMAIL') ?: PLATFORM_FEEDBACK_EMAIL);
+define('GOOGLE_CLIENT_ID', $googleClientId);
+define('GOOGLE_CLIENT_SECRET', $googleClientSecret);
+define('GOOGLE_REDIRECT_URI', $googleRedirectUri !== '' ? $googleRedirectUri : rtrim(BASE_URL, '/') . '/index.php?page=google-callback');
 
 $isVercelRuntime = getenv('VERCEL') === '1' || getenv('VERCEL_URL') !== false || getenv('VERCEL_PROJECT_PRODUCTION_URL') !== false;
 define('IS_LOCAL_DEV', !$isVercelRuntime && in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1', '::1'], true));

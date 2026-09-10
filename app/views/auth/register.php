@@ -97,6 +97,21 @@
                         </button>
 
                     </form>
+
+                    <div class="text-center text-muted small my-3">or</div>
+
+                    <form method="GET" action="index.php">
+                        <input type="hidden" name="page" value="google-login">
+                        <div class="input-group">
+                            <select name="role" class="form-select" aria-label="Google registration role">
+                                <option value="Student">Student</option>
+                                <option value="Instructor">Instructor</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-dark fw-semibold">
+                                <i class="bi bi-google me-2" aria-hidden="true"></i>Continue with Google
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 </div>
 

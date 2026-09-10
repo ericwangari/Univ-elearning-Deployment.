@@ -128,9 +128,7 @@ class AuthController {
                             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                             $status = ($user_type === 'Instructor') ? 'Pending' : 'Approved';
 
-                            $stmt = $this->pdo->prepare("INSERT INTO users (Username, Email, Password, UserType, Status) VALUES (?, ?, ?, ?, ?)");
-                            $stmt->execute([$username, $email, $hashed_password, $user_type, $status]);
-                            $userId = (int) $this->pdo->lastInsertId();
+                            $userId = $this->createUser($username, $email, $hashed_password, $user_type, $status);
 
                             $verificationEmailSent = $this->createAndSendEmailVerificationOtp($userId, $email, $username);
                             $localAutoVerified = !$verificationEmailSent && defined('IS_LOCAL_DEV') && IS_LOCAL_DEV;
@@ -340,6 +338,134 @@ class AuthController {
         require __DIR__ . '/../views/auth/reset_password.php';
     }
 
+    public function googleLogin() {
+        if (GOOGLE_CLIENT_ID === '' || GOOGLE_CLIENT_SECRET === '') {
+            $error = "Google sign-in is not configured yet. Please contact support.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        $requestedRole = $_GET['role'] ?? 'Student';
+        $role = $requestedRole === 'Instructor' ? 'Instructor' : 'Student';
+        $state = bin2hex(random_bytes(24));
+
+        $_SESSION['google_oauth_state'] = $state;
+        $_SESSION['google_oauth_role'] = $role;
+
+        $params = [
+            'client_id' => GOOGLE_CLIENT_ID,
+            'redirect_uri' => GOOGLE_REDIRECT_URI,
+            'response_type' => 'code',
+            'scope' => 'openid email profile',
+            'state' => $state,
+            'prompt' => 'select_account',
+        ];
+
+        header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params));
+        exit;
+    }
+
+    public function googleCallback() {
+        if (GOOGLE_CLIENT_ID === '' || GOOGLE_CLIENT_SECRET === '') {
+            $error = "Google sign-in is not configured yet. Please contact support.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        $state = $_GET['state'] ?? '';
+        $expectedState = $_SESSION['google_oauth_state'] ?? '';
+        $role = $_SESSION['google_oauth_role'] ?? 'Student';
+        unset($_SESSION['google_oauth_state'], $_SESSION['google_oauth_role']);
+
+        if ($state === '' || $expectedState === '' || !hash_equals($expectedState, $state)) {
+            $error = "Google sign-in could not be verified. Please try again.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        if (!empty($_GET['error'])) {
+            $error = "Google sign-in was cancelled or denied.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        $code = $_GET['code'] ?? '';
+        if ($code === '') {
+            $error = "Google sign-in did not return a valid code. Please try again.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        $tokenResponse = $this->httpPostJson('https://oauth2.googleapis.com/token', [
+            'code' => $code,
+            'client_id' => GOOGLE_CLIENT_ID,
+            'client_secret' => GOOGLE_CLIENT_SECRET,
+            'redirect_uri' => GOOGLE_REDIRECT_URI,
+            'grant_type' => 'authorization_code',
+        ]);
+
+        $accessToken = $tokenResponse['access_token'] ?? '';
+        if ($accessToken === '') {
+            error_log('Google sign-in token exchange failed: ' . json_encode($tokenResponse));
+            $error = "Google sign-in failed. Please try again.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        $profile = $this->httpGetJson('https://www.googleapis.com/oauth2/v3/userinfo', [
+            'Authorization: Bearer ' . $accessToken,
+        ]);
+
+        $email = strtolower(trim($profile['email'] ?? ''));
+        $emailVerified = filter_var($profile['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $displayName = trim($profile['name'] ?? '');
+
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$emailVerified) {
+            $error = "Google did not confirm a verified email address for this account.";
+            require __DIR__ . '/../views/auth/login.php';
+            return;
+        }
+
+        try {
+            $user = $this->findUserByEmail($email);
+            if (!$user) {
+                $username = $this->makeUniqueUsername($displayName !== '' ? $displayName : $email);
+                $status = $role === 'Instructor' ? 'Pending' : 'Approved';
+                $password = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+                $userId = $this->createUser($username, $email, $password, $role, $status, true);
+                $user = $this->findUserById($userId);
+            } elseif (empty($user['EmailVerifiedAt'])) {
+                $stmt = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
+                $stmt->execute([$user['UserID']]);
+                $user = $this->findUserById((int) $user['UserID']);
+            }
+
+            if (!$user) {
+                throw new Exception('Could not load Google user account.');
+            }
+
+            if ($user['Status'] === 'Pending') {
+                $_SESSION['auth_success_message'] = "Your instructor account email is verified. Wait for admin approval before signing in.";
+                header("Location: index.php?page=login");
+                exit;
+            }
+
+            if ($user['Status'] === 'Rejected') {
+                $error = "Your account registration has been rejected. Please contact support.";
+                require __DIR__ . '/../views/auth/login.php';
+                return;
+            }
+
+            $this->signInUser($user);
+            header("Location: index.php?page=dashboard");
+            exit;
+        } catch (Exception $e) {
+            error_log('Google sign-in failed: ' . $e->getMessage());
+            $error = "Google sign-in failed. Please try again.";
+            require __DIR__ . '/../views/auth/login.php';
+        }
+    }
+
     public function logout() {
         session_destroy();
         header("Location: index.php?page=login");
@@ -375,6 +501,100 @@ class AuthController {
     private function deleteExistingPasswordResetTokens($userId) {
         $stmt = $this->pdo->prepare("DELETE FROM password_reset_tokens WHERE UserID = ? OR ExpiresAt <= NOW()");
         $stmt->execute([$userId]);
+    }
+
+    private function createUser($username, $email, $password, $userType, $status, $emailVerified = false) {
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt)
+                VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ")
+                RETURNING UserID
+            ");
+            $stmt->execute([$username, $email, $password, $userType, $status]);
+            return (int) $stmt->fetchColumn();
+        }
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt)
+            VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ")
+        ");
+        $stmt->execute([$username, $email, $password, $userType, $status]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    private function findUserByEmail($email) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE Email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        return $stmt->fetch();
+    }
+
+    private function findUserById($userId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE UserID = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        return $stmt->fetch();
+    }
+
+    private function makeUniqueUsername($source) {
+        $base = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', explode('@', $source)[0]));
+        if ($base === '') {
+            $base = 'user';
+        }
+
+        $base = substr($base, 0, 32);
+        $candidate = $base;
+        $suffix = 1;
+
+        while ($this->usernameExists($candidate)) {
+            $suffix++;
+            $candidate = substr($base, 0, 32 - strlen((string) $suffix)) . $suffix;
+        }
+
+        return $candidate;
+    }
+
+    private function usernameExists($username) {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE Username = ?");
+        $stmt->execute([$username]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    private function signInUser($user) {
+        session_regenerate_id(true);
+        $_SESSION['user_id'] = $user['UserID'];
+        $_SESSION['username'] = $user['Username'];
+        $_SESSION['user_type'] = $user['UserType'];
+    }
+
+    private function httpPostJson($url, array $fields) {
+        return $this->httpJson($url, [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content' => http_build_query($fields),
+        ]);
+    }
+
+    private function httpGetJson($url, array $headers = []) {
+        return $this->httpJson($url, [
+            'method' => 'GET',
+            'header' => implode("\r\n", $headers),
+        ]);
+    }
+
+    private function httpJson($url, array $options) {
+        $context = stream_context_create([
+            'http' => array_merge([
+                'timeout' => 20,
+                'ignore_errors' => true,
+            ], $options),
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            return [];
+        }
+
+        $decoded = json_decode($response, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function createAndSendEmailVerificationOtp($userId, $email, $username) {

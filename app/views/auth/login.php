@@ -120,17 +120,32 @@
                         <button type="submit" class="btn btn-primary w-100 py-3 mb-4 fw-bold shadow-sm rounded-3 fs-5 position-relative overflow-hidden group">
                             <span class="position-relative z-1"><?php echo __('sign_in'); ?></span>
                         </button>
+                    </form>
 
-                        <div class="text-center text-muted border-top pt-4">
-                            <?php echo __('dont_have_account'); ?> <a href="?page=register" class="text-primary fw-bold text-decoration-none"><?php echo __('register_here'); ?></a>
-                            <div class="mt-3 small">
-                                Need help?
-                                <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-primary fw-semibold text-decoration-none">
-                                    Contact support
-                                </a>
-                            </div>
+                    <div class="text-center text-muted small mb-3">or</div>
+
+                    <form method="GET" action="index.php" class="mb-4">
+                        <input type="hidden" name="page" value="google-login">
+                        <div class="input-group">
+                            <select name="role" class="form-select" aria-label="Google sign-in role">
+                                <option value="Student">Student</option>
+                                <option value="Instructor">Instructor</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-dark fw-semibold">
+                                <i class="bi bi-google me-2" aria-hidden="true"></i>Continue with Google
+                            </button>
                         </div>
                     </form>
+
+                    <div class="text-center text-muted border-top pt-4">
+                        <?php echo __('dont_have_account'); ?> <a href="?page=register" class="text-primary fw-bold text-decoration-none"><?php echo __('register_here'); ?></a>
+                        <div class="mt-3 small">
+                            Need help?
+                            <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-primary fw-semibold text-decoration-none">
+                                Contact support
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

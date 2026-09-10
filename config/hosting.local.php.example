@@ -29,4 +29,9 @@ return [
 
     // Public support address shown to users
     'support_email' => 'support@example.com',
+
+    // Google OAuth settings for Sign in with Google
+    'google_client_id' => '',
+    'google_client_secret' => '',
+    'google_redirect_uri' => 'http://localhost/univ_elearning/index.php?page=google-callback',
 ];
