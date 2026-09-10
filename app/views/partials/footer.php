@@ -4,6 +4,11 @@
     </div> <!-- / .container-fluid -->
     <footer class="mt-auto py-3 bg-white border-top text-center text-muted small">
         &copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for Excellence.
+        <span class="mx-2" aria-hidden="true">&middot;</span>
+        <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-muted text-decoration-none">
+            <i class="bi bi-envelope-heart me-1" aria-hidden="true"></i>
+            Support: <?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>
+        </a>
     </footer>
 </div> <!-- /#page-content-wrapper -->
 </div> <!-- /#wrapper -->

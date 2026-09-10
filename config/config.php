@@ -112,6 +112,7 @@ define('SMTP_USERNAME', $smtpUsername);
 define('SMTP_PASSWORD', $smtpPassword);
 define('SMTP_SECURE', strtolower($smtpSecure));
 define('PLATFORM_FEEDBACK_EMAIL', $localConfig['platform_feedback_email'] ?? getenv('PLATFORM_FEEDBACK_EMAIL') ?: 'univelearning01@gmail.com');
+define('SUPPORT_EMAIL', $localConfig['support_email'] ?? getenv('SUPPORT_EMAIL') ?: PLATFORM_FEEDBACK_EMAIL);
 
 $isVercelRuntime = getenv('VERCEL') === '1' || getenv('VERCEL_URL') !== false || getenv('VERCEL_PROJECT_PRODUCTION_URL') !== false;
 define('IS_LOCAL_DEV', !$isVercelRuntime && in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1', '::1'], true));

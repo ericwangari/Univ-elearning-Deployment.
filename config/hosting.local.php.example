@@ -26,4 +26,7 @@ return [
 
     // Base URL of your app (must end with trailing slash)
     'base_url'  => 'http://localhost/univ_elearning/',
+
+    // Public support address shown to users
+    'support_email' => 'support@example.com',
 ];
