@@ -26,6 +26,14 @@
       "use": "vercel-php@0.7.1"
     },
     {
+      "src": "sw.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "manifest.json",
+      "use": "@vercel/static"
+    },
+    {
       "src": "public/css/**",
       "use": "@vercel/static"
     },
@@ -50,6 +58,14 @@
     {
       "src": "^/manifest\\.json$",
       "dest": "/manifest.json"
+    },
+    {
+      "src": "^/favicon\\.ico$",
+      "dest": "/public/images/icons/icon-192.png"
+    },
+    {
+      "src": "^/favicon\\.png$",
+      "dest": "/public/images/icons/icon-192.png"
     },
     {
       "src": "^/deploy_setup\\.php$",
