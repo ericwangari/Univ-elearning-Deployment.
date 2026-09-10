@@ -37,6 +37,14 @@ switch ($page) {
         $auth->verifyEmail();
         break;
 
+    case 'google-login':
+        $auth->googleLogin();
+        break;
+
+    case 'google-callback':
+        $auth->googleCallback();
+        break;
+
     case 'forgot-password':
         $auth->forgotPassword();
         break;
