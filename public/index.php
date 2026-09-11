@@ -9,6 +9,7 @@ require_once __DIR__ . '/../app/controllers/AdminController.php';
 require_once __DIR__ . '/../app/controllers/InstructorController.php';
 require_once __DIR__ . '/../app/controllers/MessageController.php';
 require_once __DIR__ . '/../app/controllers/FeedbackController.php';
+require_once __DIR__ . '/../app/controllers/SupportController.php';
 
 $page = $_GET['page'] ?? 'login';
 
@@ -19,6 +20,7 @@ $admin = new AdminController($pdo);
 $instructor = new InstructorController($pdo);
 $message = new MessageController($pdo);
 $feedback = new FeedbackController($pdo);
+$support = new SupportController($pdo);
 
 switch ($page) {
 
@@ -31,6 +33,10 @@ switch ($page) {
 
     case 'verify-email':
         $auth->verifyEmail();
+        break;
+
+    case 'contact-support':
+        $support->contact();
         break;
 
     case 'google-login':

@@ -10,6 +10,7 @@ require_once 'app/controllers/AdminController.php';
 require_once 'app/controllers/InstructorController.php';
 require_once 'app/controllers/MessageController.php';
 require_once 'app/controllers/FeedbackController.php';
+require_once 'app/controllers/SupportController.php';
 
 // Route handling. Opening the app should always start at login unless a page is requested.
 $page = $_GET['page'] ?? 'login';
@@ -22,6 +23,7 @@ $adminCtrl = new AdminController($pdo);
 $instructorCtrl = new InstructorController($pdo);
 $messageCtrl = new MessageController($pdo);
 $feedbackCtrl = new FeedbackController($pdo);
+$supportCtrl = new SupportController($pdo);
 
 // Simple Router
 switch ($page) {
@@ -35,6 +37,10 @@ switch ($page) {
 
     case 'verify-email':
         $auth->verifyEmail();
+        break;
+
+    case 'contact-support':
+        $supportCtrl->contact();
         break;
 
     case 'google-login':

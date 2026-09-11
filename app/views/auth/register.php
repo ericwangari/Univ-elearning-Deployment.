@@ -119,7 +119,7 @@
                     <i class="bi bi-c-circle me-1" aria-hidden="true"></i>
                     <?php echo date('Y'); ?> <?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?>. All rights reserved.
                     <span class="mx-2" aria-hidden="true">&middot;</span>
-                    <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-muted text-decoration-none">
+                    <a href="?page=contact-support" class="text-muted text-decoration-none">
                         Support
                     </a>
                 </footer>

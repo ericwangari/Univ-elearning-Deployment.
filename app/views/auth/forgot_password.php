@@ -66,7 +66,7 @@
 
                         <div class="text-center text-muted small mt-4">
                             Need help?
-                            <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-primary fw-semibold text-decoration-none">
+                            <a href="?page=contact-support" class="text-primary fw-semibold text-decoration-none">
                                 Contact support
                             </a>
                         </div>

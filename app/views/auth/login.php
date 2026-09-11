@@ -141,7 +141,7 @@
                         <?php echo __('dont_have_account'); ?> <a href="?page=register" class="text-primary fw-bold text-decoration-none"><?php echo __('register_here'); ?></a>
                         <div class="mt-3 small">
                             Need help?
-                            <a href="mailto:<?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>" class="text-primary fw-semibold text-decoration-none">
+                            <a href="?page=contact-support" class="text-primary fw-semibold text-decoration-none">
                                 Contact support
                             </a>
                         </div>
