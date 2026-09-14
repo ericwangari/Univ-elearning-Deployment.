@@ -102,18 +102,17 @@ $userType = $_SESSION['user_type'];
 }
 
 .message-sent {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    background-color: #4f46e5 !important;
     background-image: none !important;
-    background-attachment: fixed !important;
-    color: #ffffff !important;
+    color: #ffffff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
-    opacity: 1 !important;
+    opacity: 1;
 }
 
 .message-received {
-    background-color: #ffffff !important;
-    color: var(--text-main) !important;
+    background-color: #ffffff;
+    color: var(--text-main);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
     border: 1px solid #eef2f6;

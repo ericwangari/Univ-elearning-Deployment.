@@ -211,57 +211,25 @@ class MessageController {
     }
 
     private function insertMessage($senderId, $receiverId, $messageText) {
-        // Perform an atomic conditional insert to avoid duplicates caused by race conditions
-        try {
-            if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
-                // For PostgreSQL: try to return an existing recent message (within 5s) or insert and return the new row
-                $stmt = $this->pdo->prepare("
-                    WITH existing AS (
-                        SELECT * FROM messages WHERE SenderID = ? AND ReceiverID = ? AND MessageText = ? AND SentAt >= NOW() - INTERVAL '5 seconds' LIMIT 1
-                    ), ins AS (
-                        INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead)
-                        SELECT ?, ?, ?, 0
-                        WHERE NOT EXISTS (SELECT 1 FROM existing)
-                        RETURNING *
-                    )
-                    SELECT * FROM ins
-                    UNION ALL
-                    SELECT * FROM existing
-                    LIMIT 1
-                ");
-                $stmt->execute([$senderId, $receiverId, $messageText, $senderId, $receiverId, $messageText]);
-                return $stmt->fetch();
-            }
-
-            // For MySQL / others: use transaction and conditional insert based on recent SentAt window
-            $this->pdo->beginTransaction();
-
-            $check = $this->pdo->prepare("SELECT * FROM messages WHERE SenderID = ? AND ReceiverID = ? AND MessageText = ? AND SentAt >= DATE_SUB(NOW(), INTERVAL 5 SECOND) ORDER BY SentAt DESC LIMIT 1");
-            $check->execute([$senderId, $receiverId, $messageText]);
-            $existing = $check->fetch();
-            if ($existing) {
-                $this->pdo->commit();
-                return $existing;
-            }
-
-            $insertStmt = $this->pdo->prepare("INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead) VALUES (?, ?, ?, 0)");
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
+            $insertStmt = $this->pdo->prepare("
+                INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead)
+                VALUES (?, ?, ?, 0)
+                RETURNING *
+            ");
             $insertStmt->execute([$senderId, $receiverId, $messageText]);
-            $messageId = $this->pdo->lastInsertId();
-
-            $this->pdo->commit();
-
-            $msgStmt = $this->pdo->prepare("SELECT * FROM messages WHERE MessageID = ?");
-            $msgStmt->execute([$messageId]);
-            return $msgStmt->fetch();
-        } catch (Exception $e) {
-            try { if ($this->pdo->inTransaction()) $this->pdo->rollBack(); } catch (Exception $__ ) {}
-            // If anything goes wrong, fall back to a simple insert attempt (best-effort)
-            $insertStmt = $this->pdo->prepare("INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead) VALUES (?, ?, ?, 0)");
-            $insertStmt->execute([$senderId, $receiverId, $messageText]);
-            $messageId = $this->pdo->lastInsertId();
-            $msgStmt = $this->pdo->prepare("SELECT * FROM messages WHERE MessageID = ?");
-            $msgStmt->execute([$messageId]);
-            return $msgStmt->fetch();
+            return $insertStmt->fetch();
         }
+
+        $insertStmt = $this->pdo->prepare("
+            INSERT INTO messages (SenderID, ReceiverID, MessageText, IsRead)
+            VALUES (?, ?, ?, 0)
+        ");
+        $insertStmt->execute([$senderId, $receiverId, $messageText]);
+        $messageId = $this->pdo->lastInsertId();
+
+        $msgStmt = $this->pdo->prepare("SELECT * FROM messages WHERE MessageID = ?");
+        $msgStmt->execute([$messageId]);
+        return $msgStmt->fetch();
     }
 }
