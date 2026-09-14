@@ -257,7 +257,7 @@ switch ($page) {
     case 'set-language':
         $lang = $_GET['lang'] ?? 'en';
         setLanguage($lang);
-        $redirect = $_GET['redirect'] ?? 'index.php?page=dashboard';
+        $redirect = getLanguageRedirect($_GET['redirect'] ?? 'index.php?page=dashboard');
         header("Location: $redirect");
         exit;
         break;

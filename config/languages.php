@@ -8,7 +8,7 @@
 $current_language = $_SESSION['language'] ?? $_COOKIE['language'] ?? 'en';
 
 // Define available languages
-define('AVAILABLE_LANGUAGES', ['en', 'es', 'fr', 'de', 'ar', 'sw']);
+define('AVAILABLE_LANGUAGES', ['en', 'tr']);
 
 // Language auto-detection based on Accept-Language header
 if (!isset($_SESSION['language']) && !isset($_COOKIE['language'])) {
@@ -110,45 +110,70 @@ $lang = [
         'hours_ago' => 'hours ago',
         'days_ago' => 'days ago',
     ],
-    'es' => [
-        'nav_dashboard' => 'Panel de Control',
-        'nav_courses' => 'Cursos',
-        'nav_messages' => 'Mensajes',
-        'login_title' => 'Bienvenido de vuelta',
-        'sign_in' => 'Iniciar sesión',
-        // Add more Spanish translations as needed
-    ],
-    'fr' => [
-        'nav_dashboard' => 'Tableau de bord',
-        'nav_courses' => 'Cours',
-        'nav_messages' => 'Messages',
-        'login_title' => 'Bienvenue',
-        'sign_in' => 'Se connecter',
-        // Add more French translations as needed
-    ],
-    'de' => [
-        'nav_dashboard' => 'Dashboard',
-        'nav_courses' => 'Kurse',
-        'nav_messages' => 'Nachrichten',
-        'login_title' => 'Willkommen zurück',
-        'sign_in' => 'Anmelden',
-        // Add more German translations as needed
-    ],
-    'ar' => [
-        'nav_dashboard' => 'لوحة التحكم',
-        'nav_courses' => 'الدورات',
-        'nav_messages' => 'الرسائل',
-        'login_title' => 'أهلا وسهلا',
-        'sign_in' => 'تسجيل الدخول',
-        // Add more Arabic translations as needed
-    ],
-    'sw' => [
-        'nav_dashboard' => 'Dashibohdi',
-        'nav_courses' => 'Kozi',
-        'nav_messages' => 'Ujumbe',
-        'login_title' => 'Karibu tena',
-        'sign_in' => 'Ingia',
-        // Add more Swahili translations as needed
+    'tr' => [
+        'nav_dashboard' => 'Kontrol Paneli',
+        'nav_courses' => 'Kurslar',
+        'nav_messages' => 'Mesajlar',
+        'nav_results' => 'Sonuçlar',
+        'nav_logout' => 'Çıkış Yap',
+        'user_management' => 'Kullanıcı Yönetimi',
+        'student_results' => 'Öğrenci Sonuçları',
+        'save' => 'Kaydet',
+        'cancel' => 'İptal',
+        'delete' => 'Sil',
+        'edit' => 'Düzenle',
+        'add' => 'Ekle',
+        'submit' => 'Gönder',
+        'back' => 'Geri',
+        'search' => 'Ara',
+        'loading' => 'Yükleniyor...',
+        'error' => 'Hata',
+        'success' => 'Başarılı',
+        'warning' => 'Uyarı',
+        'info' => 'Bilgi',
+        'login_title' => 'Tekrar Hoş Geldiniz',
+        'login_subtitle' => 'Öğrenme yolculuğunuza devam etmek için giriş yapın.',
+        'email_username' => 'E-posta Adresi veya Kullanıcı Adı',
+        'password' => 'Şifre',
+        'remember_me' => 'Beni hatırla',
+        'forgot_password' => 'Şifrenizi mi unuttunuz?',
+        'sign_in' => 'Giriş Yap',
+        'register_here' => 'Buradan kayıt olun',
+        'dont_have_account' => 'Hesabınız yok mu?',
+        'sign_up' => 'Kayıt Ol',
+        'course_catalog' => 'Kurs Kataloğu',
+        'explore_courses' => 'Dünya standartlarında öğrenme içeriklerimizi keşfedin.',
+        'no_courses_found' => 'Aramanızla eşleşen kurs bulunamadı.',
+        'enroll' => 'Kayıt Ol',
+        'enrolled' => 'Kayıtlı',
+        'continue_learning' => 'Öğrenmeye Devam Et',
+        'course_details' => 'Kurs Detayları',
+        'instructor' => 'Eğitmen',
+        'students' => 'Öğrenciler',
+        'total_quizzes' => 'Toplam Sınav',
+        'type_message' => 'Bir mesaj yazın...',
+        'send' => 'Gönder',
+        'message_sent' => 'Mesaj gönderildi',
+        'message_failed' => 'Mesaj gönderilemedi',
+        'no_messages' => 'Henüz mesaj yok. Sohbeti başlatmak için merhaba deyin!',
+        'all_users' => 'Tüm Kullanıcılar',
+        'username' => 'Kullanıcı Adı',
+        'email' => 'E-posta',
+        'role' => 'Rol',
+        'joined_date' => 'Katılım Tarihi',
+        'actions' => 'İşlemler',
+        'admin' => 'Yönetici',
+        'student' => 'Öğrenci',
+        'all_user_types' => 'Tüm Kullanıcı Türleri',
+        'results' => 'Sonuçlar',
+        'quiz_results' => 'Sınav Sonuçları',
+        'score' => 'Puan',
+        'failed_attempts' => 'Başarısız Denemeler',
+        'no_results_yet' => 'Kurslarınız için henüz sonuç kaydı yok.',
+        'just_now' => 'Az önce',
+        'minutes_ago' => 'dakika önce',
+        'hours_ago' => 'saat önce',
+        'days_ago' => 'gün önce',
     ],
 ];
 
@@ -179,11 +204,25 @@ function __($key, $language = null) {
  */
 function setLanguage($language) {
     global $current_language;
-    if (in_array($language, AVAILABLE_LANGUAGES)) {
+    if (in_array($language, AVAILABLE_LANGUAGES, true)) {
         $current_language = $language;
         $_SESSION['language'] = $language;
         setcookie('language', $language, time() + (365 * 24 * 60 * 60), '/');
     }
+}
+
+/**
+ * Return a safe same-site destination after changing language.
+ * @param string $redirect The requested redirect URL
+ * @return string
+ */
+function getLanguageRedirect($redirect) {
+    $redirect = trim((string) $redirect);
+    if ($redirect === '' || preg_match('/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i', $redirect)) {
+        return 'index.php?page=dashboard';
+    }
+
+    return '/' . ltrim($redirect, '/');
 }
 
 /**

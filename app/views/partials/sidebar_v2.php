@@ -2,16 +2,7 @@
 // app/views/partials/sidebar_v2.php
 $user_type = $_SESSION['user_type'] ?? 'Student';
 $current_page = $_GET['page'] ?? '';
-$languageNames = [
-    'en' => 'English',
-    'es' => 'Espanol',
-    'fr' => 'Francais',
-    'de' => 'Deutsch',
-    'ar' => 'Arabic',
-    'sw' => 'Swahili',
-];
 $currentLanguage = getCurrentLanguage();
-$currentUrl = $_SERVER['REQUEST_URI'] ?? 'index.php?page=dashboard';
 
 // If no page is set but we are on the default route, consider it dashboard
 if (empty($current_page)) {
@@ -88,17 +79,9 @@ if (empty($current_page)) {
                     Welcome back, <span class="text-primary"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Guest'); ?></span> (<?php echo $_SESSION['user_type'] ?? 'Student'; ?>)
                 </span>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <form method="GET" action="index.php" class="d-none d-sm-block">
-                    <input type="hidden" name="page" value="set-language">
-                    <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($currentUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                    <select name="lang" class="form-select form-select-sm" aria-label="Language" onchange="this.form.submit()">
-                        <?php foreach (AVAILABLE_LANGUAGES as $languageCode): ?>
-                            <option value="<?php echo htmlspecialchars($languageCode, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $currentLanguage === $languageCode ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($languageNames[$languageCode] ?? strtoupper($languageCode), ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
+                <div class="d-none d-sm-block">
+                    <?php include __DIR__ . '/language-selector.php'; ?>
+                </div>
                 <span class="text-muted small"><?php echo date('D, M j, Y'); ?></span>
             </div>
         </div>
