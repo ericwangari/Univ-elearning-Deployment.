@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars(getCurrentLanguage(), ENT_QUOTES, 'UTF-8'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,6 +34,9 @@
             <div class="col-lg-6 d-flex flex-column p-4 p-md-5 bg-white shadow-lg animate__animated animate__fadeInLeft">
                 <div class="w-100 flex-grow-1 d-flex align-items-center justify-content-center">
                 <div class="w-100" style="max-width: 480px;">
+                    <div class="d-flex justify-content-end mb-3">
+                        <?php include __DIR__ . '/../partials/language-selector.php'; ?>
+                    </div>
                     <div class="mb-4">
                         <a href="?page=login" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i> Back to login</a>
                     </div>

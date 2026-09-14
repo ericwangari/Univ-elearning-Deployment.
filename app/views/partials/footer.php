@@ -3,11 +3,11 @@
 ?>
     </div> <!-- / .container-fluid -->
     <footer class="mt-auto py-3 bg-white border-top text-center text-muted small">
-        &copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for Excellence.
+        &copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. <?php echo __('built_for_excellence'); ?>
         <span class="mx-2" aria-hidden="true">&middot;</span>
         <a href="?page=contact-support" class="text-muted text-decoration-none">
             <i class="bi bi-envelope-heart me-1" aria-hidden="true"></i>
-            Support: <?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>
+            <?php echo __('support'); ?>: <?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>
         </a>
     </footer>
 </div> <!-- /#page-content-wrapper -->
@@ -17,7 +17,7 @@
     <div class="pwa-install-widget" id="pwaInstallWidget" hidden>
         <button type="button" class="pwa-install-button" id="pwaInstallButton">
             <i class="bi bi-download"></i>
-            <span>Install App</span>
+            <span><?php echo __('install_app'); ?></span>
         </button>
         <button type="button" class="pwa-install-dismiss" id="pwaInstallDismiss" aria-label="Hide install prompt">
             <i class="bi bi-x-lg"></i>
@@ -34,7 +34,7 @@
             </button>
             <button type="button" class="student-feedback-button" id="studentFeedbackOpen" data-bs-toggle="modal" data-bs-target="#studentFeedbackModal">
                 <i class="bi bi-chat-heart"></i>
-                <span>Feedback</span>
+                <span><?php echo __('feedback'); ?></span>
             </button>
         </div>
     </div>
@@ -44,7 +44,7 @@
             <div class="modal-content student-feedback-modal">
                 <form id="studentFeedbackForm" action="feedback_submit.php" method="POST" class="needs-validation" novalidate>
                     <div class="modal-header">
-                        <h5 class="modal-title" id="studentFeedbackModalLabel">Send Feedback</h5>
+                        <h5 class="modal-title" id="studentFeedbackModalLabel"><?php echo __('send_feedback'); ?></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">

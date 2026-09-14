@@ -29,14 +29,14 @@ if (empty($current_page)) {
                 <i class="bi bi-people me-2"></i> <?php echo __('user_management'); ?>
             </a>
             <a href="?page=manage-instructors" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'manage-instructors') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-person-check me-2"></i> Instructor Approvals
+                <i class="bi bi-person-check me-2"></i> <?php echo __('nav_instructor_approvals'); ?>
             </a>
             <a href="?page=admin-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'admin-courses') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-book me-2"></i> <?php echo __('nav_courses'); ?>
             </a>
         <?php elseif ($user_type === 'Instructor'): ?>
             <a href="?page=manage-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'manage-courses') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-journal-text me-2"></i> My Courses
+                <i class="bi bi-journal-text me-2"></i> <?php echo __('nav_my_courses'); ?>
             </a>
             <a href="?page=student-results" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'student-results') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-award me-2"></i> <?php echo __('student_results'); ?>
@@ -49,7 +49,7 @@ if (empty($current_page)) {
                 <i class="bi bi-search me-2"></i> <?php echo __('nav_courses'); ?>
             </a>
             <a href="?page=my-enrollments" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'my-enrollments') ? 'active bg-primary' : ''; ?>">
-                <i class="bi bi-mortarboard me-2"></i> My Learning
+                <i class="bi bi-mortarboard me-2"></i> <?php echo __('nav_my_learning'); ?>
             </a>
             <a href="?page=my-results" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'my-results') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-card-checklist me-2"></i> <?php echo __('nav_results'); ?>
@@ -76,10 +76,10 @@ if (empty($current_page)) {
                     <i class="bi bi-list"></i>
                 </button>
                 <span class="navbar-text fw-medium">
-                    Welcome back, <span class="text-primary"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Guest'); ?></span> (<?php echo $_SESSION['user_type'] ?? 'Student'; ?>)
+                    <?php echo __('welcome_back'); ?>, <span class="text-primary"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Guest'); ?></span> (<?php echo $_SESSION['user_type'] ?? 'Student'; ?>)
                 </span>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <div class="d-none d-sm-block">
+                <div>
                     <?php include __DIR__ . '/language-selector.php'; ?>
                 </div>
                 <span class="text-muted small"><?php echo date('D, M j, Y'); ?></span>

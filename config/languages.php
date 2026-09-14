@@ -4,11 +4,12 @@
  * Provides internationalization support for multiple languages
  */
 
-// Current language (can be set from session, cookies, or config)
-$current_language = $_SESSION['language'] ?? $_COOKIE['language'] ?? 'en';
-
 // Define available languages
 define('AVAILABLE_LANGUAGES', ['en', 'tr']);
+
+// Current language (can be set from session, cookies, or config)
+$requested_language = $_SESSION['language'] ?? $_COOKIE['language'] ?? 'en';
+$current_language = in_array($requested_language, AVAILABLE_LANGUAGES, true) ? $requested_language : 'en';
 
 // Language auto-detection based on Accept-Language header
 if (!isset($_SESSION['language']) && !isset($_COOKIE['language'])) {
@@ -31,6 +32,15 @@ $lang = [
         'nav_admin' => 'Admin Panel',
         'nav_profile' => 'Profile',
         'nav_logout' => 'Logout',
+        'nav_instructor_approvals' => 'Instructor Approvals',
+        'nav_my_courses' => 'My Courses',
+        'nav_my_learning' => 'My Learning',
+        'welcome_back' => 'Welcome back',
+        'feedback' => 'Feedback',
+        'send_feedback' => 'Send Feedback',
+        'install_app' => 'Install App',
+        'support' => 'Support',
+        'built_for_excellence' => 'Built for Excellence.',
         
         // Common
         'save' => 'Save',
@@ -116,6 +126,15 @@ $lang = [
         'nav_messages' => 'Mesajlar',
         'nav_results' => 'Sonuçlar',
         'nav_logout' => 'Çıkış Yap',
+        'nav_instructor_approvals' => 'Eğitmen Onayları',
+        'nav_my_courses' => 'Kurslarım',
+        'nav_my_learning' => 'Öğrenimim',
+        'welcome_back' => 'Tekrar hoş geldiniz',
+        'feedback' => 'Geri Bildirim',
+        'send_feedback' => 'Geri Bildirim Gönder',
+        'install_app' => 'Uygulamayı Yükle',
+        'support' => 'Destek',
+        'built_for_excellence' => 'Mükemmellik için tasarlandı.',
         'user_management' => 'Kullanıcı Yönetimi',
         'student_results' => 'Öğrenci Sonuçları',
         'save' => 'Kaydet',

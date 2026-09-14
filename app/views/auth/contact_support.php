@@ -34,6 +34,9 @@
 
             <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5 bg-white shadow-lg animate__animated animate__fadeInRight">
                 <div class="w-100" style="max-width: 500px;">
+                    <div class="d-flex justify-content-end mb-3">
+                        <?php include __DIR__ . '/../partials/language-selector.php'; ?>
+                    </div>
                     <div class="mb-4">
                         <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="text-decoration-none text-muted">
                             <i class="bi bi-arrow-left me-1"></i> Back

@@ -28,16 +28,6 @@
     </script>
 </head>
 <body class="bg-light">
-    <?php
-        $languageNames = [
-            'en' => 'English',
-            'es' => 'Espanol',
-            'fr' => 'Francais',
-            'de' => 'Deutsch',
-            'ar' => 'Arabic',
-            'sw' => 'Swahili',
-        ];
-    ?>
     <div class="auth-wrapper">
         <div class="row w-100 m-0">
             <!-- Left Side: Image/Branding -->
@@ -52,17 +42,9 @@
             <!-- Right Side: Form -->
             <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5 bg-white shadow-lg animate__animated animate__fadeInRight">
                 <div class="w-100" style="max-width: 450px;">
-                    <form method="GET" action="index.php" class="d-flex justify-content-end mb-3">
-                        <input type="hidden" name="page" value="set-language">
-                        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php?page=login', ENT_QUOTES, 'UTF-8'); ?>">
-                        <select name="lang" class="form-select form-select-sm" style="max-width: 150px;" aria-label="Language" onchange="this.form.submit()">
-                            <?php foreach (AVAILABLE_LANGUAGES as $languageCode): ?>
-                                <option value="<?php echo htmlspecialchars($languageCode, ENT_QUOTES, 'UTF-8'); ?>" <?php echo getCurrentLanguage() === $languageCode ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($languageNames[$languageCode] ?? strtoupper($languageCode), ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
+                    <div class="d-flex justify-content-end mb-3">
+                        <?php include __DIR__ . '/../partials/language-selector.php'; ?>
+                    </div>
                     <div class="text-center mb-5">
                         <div class="d-inline-flex align-items-center justify-content-center bg-soft-primary text-primary rounded-circle mb-3" style="width: 70px; height: 70px;">
                             <i class="bi bi-person-circle fs-1"></i>
