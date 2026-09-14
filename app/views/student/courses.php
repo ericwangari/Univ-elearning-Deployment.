@@ -52,6 +52,7 @@ $sort = $_GET['sort'] ?? 'new';
     <div class="row g-4" id="coursesGrid">
         <?php if (!empty($courses)): ?>
             <?php foreach ($courses as $course): ?>
+                <?php $isEnrolled = !empty($course['IsEnrolled'] ?? $course['isenrolled'] ?? false); ?>
                 <div class="col-md-6 col-lg-4 col-xl-3 animate__animated animate__fadeInUp course-card-container">
                     <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
                         <div class="position-relative">
@@ -85,7 +86,7 @@ $sort = $_GET['sort'] ?? 'new';
                             </div>
                         </div>
                         <div class="card-footer bg-white border-0 p-4 pt-0">
-                            <?php if ($course['IsEnrolled']): ?>
+                            <?php if ($isEnrolled): ?>
                                 <a href="?page=course-details&id=<?php echo $course['CourseID']; ?>" class="btn btn-soft-primary w-100 fw-bold">
                                     <i class="bi bi-play-circle me-2"></i> Continue Learning
                                 </a>
