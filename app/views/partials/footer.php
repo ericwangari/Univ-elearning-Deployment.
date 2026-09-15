@@ -42,7 +42,7 @@
     <div class="modal fade" id="studentFeedbackModal" tabindex="-1" aria-labelledby="studentFeedbackModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content student-feedback-modal">
-                <form id="studentFeedbackForm" action="feedback_submit.php" method="POST" class="needs-validation" novalidate>
+                <form id="studentFeedbackForm" action="?page=send-feedback" method="POST" class="needs-validation" novalidate>
                     <div class="modal-header">
                         <h5 class="modal-title" id="studentFeedbackModalLabel"><?php echo __('send_feedback'); ?></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

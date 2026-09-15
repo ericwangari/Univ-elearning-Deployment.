@@ -49,6 +49,8 @@ class FeedbackController {
     }
 
     private function respond(array $payload) {
+        $payload['success'] = ($payload['status'] ?? '') === 'success';
+
         if ($this->isAjaxRequest()) {
             header('Content-Type: application/json');
             echo json_encode($payload);

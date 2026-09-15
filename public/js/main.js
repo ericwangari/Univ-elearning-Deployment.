@@ -409,6 +409,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error(response.redirected
+                        ? 'Your session expired. Please sign in again before sending feedback.'
+                        : 'Feedback could not be sent because the server returned an unexpected response.');
+                }
+
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
