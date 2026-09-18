@@ -28,10 +28,11 @@
     <path fill="none" stroke="#f4f5f8" stroke-width="6" d="M190 197v64M216 197v64M175 272v65M201 272v65M148 347v64M174 347v64"/>
     <path fill="none" stroke="#f6d993" stroke-width="5" d="M265 350h208M265 369h166M260 425h224M260 443h188"/>
     <path fill="none" stroke="#dfe8ff" stroke-width="5" d="M265 216h201M265 235h154"/>
+    <path fill="none" stroke="#f6d993" stroke-width="8" d="M239 319c-16 10-27 25-27 42M239 244c-16 10-27 25-27 42M239 169c-16 10-27 25-27 42"/>
     <path fill="none" stroke="#f6d993" stroke-width="5" d="M510 350c11 8 17 20 17 33M504 274c11 8 17 20 17 33M481 198c11 8 17 20 17 33"/>
   </g>
 
-  <g fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="2">
+  <g fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="2">
     <text x="277" y="227">LEARNING</text>
     <text x="252" y="302">KNOWLEDGE</text>
     <text x="250" y="378">WISDOM</text>

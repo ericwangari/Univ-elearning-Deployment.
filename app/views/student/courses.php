@@ -56,7 +56,7 @@ $sort = $_GET['sort'] ?? 'new';
                 <div class="col-md-6 col-lg-4 col-xl-3 animate__animated animate__fadeInUp course-card-container">
                     <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
                         <div class="position-relative">
-                            <img src="/images/books-cartoon.svg" class="card-img-top bg-light" alt="Course" style="height: 160px; object-fit: contain; padding: 1rem;">
+                            <img src="/images/books-cartoon.svg?v=2" class="card-img-top bg-light" alt="Course" style="height: 160px; object-fit: contain; padding: 1rem;">
                         </div>
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -106,7 +106,7 @@ $sort = $_GET['sort'] ?? 'new';
             <?php endforeach; ?>
         <?php else: ?>
             <div class="col-12 text-center py-5">
-                <img src="/images/books-cartoon.svg" alt="No courses" style="height: 200px; object-fit: contain;" class="mb-4">
+                <img src="/images/books-cartoon.svg?v=2" alt="No courses" style="height: 200px; object-fit: contain;" class="mb-4">
                 <h4 class="text-muted">No courses found matching your criteria.</h4>
                 <a href="?page=courses" class="btn btn-primary mt-3">Reset Filters</a>
             </div>
