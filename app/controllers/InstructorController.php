@@ -585,8 +585,8 @@ class InstructorController {
                         (SELECT COUNT(*)
                          FROM results fr
                          JOIN quizzes fq ON fr.QuizID = fq.QuizID
-                         WHERE fr.UserID = best.UserID
-                           AND fr.CourseID = best.CourseID
+                         WHERE fr.UserID = u.UserID
+                           AND fr.CourseID = c.CourseID
                            AND fr.Score < 50) AS FailedAttempts
                         FROM (
                             SELECT UserID, QuizID, CourseID, MAX(Score) AS Score

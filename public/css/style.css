@@ -84,23 +84,6 @@ body {
     line-height: 1;
 }
 
-.logo-spark {
-    position: absolute;
-    right: -7px;
-    bottom: -6px;
-    min-width: 20px;
-    height: 18px;
-    padding: 0 4px;
-    border-radius: 999px;
-    background: #f8fafc;
-    color: var(--primary-color);
-    font-size: 0.6rem;
-    font-weight: 800;
-    line-height: 18px;
-    letter-spacing: 0;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.22);
-}
-
 .ai-teacher-orb {
     width: 72px;
     height: 72px;

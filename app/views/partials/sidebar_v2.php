@@ -15,7 +15,6 @@ if (empty($current_page)) {
         <div class="sidebar-heading border-bottom p-3 fs-5 fw-bold text-center text-primary">
             <span class="sidebar-logo-mark me-2" aria-hidden="true">
                 <i class="bi bi-mortarboard-fill"></i>
-                <span class="logo-spark">AI</span>
             </span>
             <span class="sidebar-brand-text">Univ<span class="text-white">Learning</span></span>
             <button type="button" class="btn btn-sm btn-outline-light sidebar-close-btn d-lg-none" id="sidebar-close" aria-label="Close navigation">
