@@ -5,7 +5,7 @@ $user_type = $_SESSION['user_type'] ?? 'Student';
 <!-- Sidebar -->
 <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
     <div class="sidebar-heading border-bottom p-4 fs-4 fw-bold text-center text-primary">
-        Univ<span class="text-white">Learn</span>
+        Univ<span class="text-white">Learning</span>
     </div>
     <div class="list-group list-group-flush p-3">
         <a href="?page=dashboard" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo (in_array($_GET['page'] ?? 'dashboard', ['dashboard', 'instructor-dashboard', 'admin-dashboard'])) ? 'active bg-primary' : ''; ?>">
@@ -40,6 +40,10 @@ $user_type = $_SESSION['user_type'] ?? 'Student';
                 <i class="bi bi-card-checklist me-2"></i> My Results
             </a>
         <?php endif; ?>
+
+        <a href="?page=ai-teacher" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo (($_GET['page'] ?? '') == 'ai-teacher') ? 'active bg-primary' : ''; ?>">
+            <i class="bi bi-stars me-2"></i> AI Teacher
+        </a>
 
         <hr class="bg-light">
         <a href="?page=logout" class="list-group-item list-group-item-action bg-dark text-danger border-0 py-3 rounded">

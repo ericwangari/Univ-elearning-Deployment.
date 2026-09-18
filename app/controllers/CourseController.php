@@ -32,8 +32,7 @@ class CourseController {
                    JOIN results r ON r.QuizID = q.QuizID
                    WHERE r.UserID = ?
                      AND q.CourseID = c.CourseID
-                     AND q.TotalMarks > 0
-                     AND ((r.Score / q.TotalMarks) * 100) >= 50) as CompletedQuizzes
+                     AND r.Score >= 50) as CompletedQuizzes
                   FROM courses c
                   JOIN enrollments e ON c.CourseID = e.CourseID
                   JOIN (
@@ -81,10 +80,10 @@ class CourseController {
         // Calculate average score from results
         $average_score = 0;
         if ($completed_quizzes > 0) {
-            $stmt = $this->pdo->prepare("SELECT AVG((r.Score / q.TotalMarks) * 100) as avg_score
+            $stmt = $this->pdo->prepare("SELECT AVG(r.Score) as avg_score
                                          FROM results r
                                          JOIN quizzes q ON r.QuizID = q.QuizID
-                                         WHERE r.UserID = ? AND q.TotalMarks > 0");
+                                         WHERE r.UserID = ?");
             $stmt->execute([$user_id]);
             $score_data = $stmt->fetch();
             $average_score = ($score_data && isset($score_data['avg_score'])) ? round($score_data['avg_score'], 2) : 0;
@@ -395,8 +394,7 @@ class CourseController {
                  JOIN results r ON r.QuizID = q.QuizID
                  WHERE r.UserID = ?
                    AND q.CourseID = c.CourseID
-                   AND q.TotalMarks > 0
-                   AND ((r.Score / q.TotalMarks) * 100) >= 50) as CompletedQuizzes
+                   AND r.Score >= 50) as CompletedQuizzes
                 FROM courses c
                 JOIN enrollments latest_e ON c.CourseID = latest_e.CourseID
                 JOIN (

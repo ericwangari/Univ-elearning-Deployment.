@@ -10,6 +10,7 @@ require_once __DIR__ . '/../app/controllers/InstructorController.php';
 require_once __DIR__ . '/../app/controllers/MessageController.php';
 require_once __DIR__ . '/../app/controllers/FeedbackController.php';
 require_once __DIR__ . '/../app/controllers/SupportController.php';
+require_once __DIR__ . '/../app/controllers/AiTeacherController.php';
 
 $page = $_GET['page'] ?? 'login';
 
@@ -21,6 +22,7 @@ $instructor = new InstructorController($pdo);
 $message = new MessageController($pdo);
 $feedback = new FeedbackController($pdo);
 $support = new SupportController($pdo);
+$aiTeacher = new AiTeacherController($pdo);
 
 switch ($page) {
 
@@ -61,6 +63,10 @@ switch ($page) {
 
     case 'courses':
         $course->courses();
+        break;
+
+    case 'ai-teacher':
+        $aiTeacher->index();
         break;
 
     case 'course-details':

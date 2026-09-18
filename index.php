@@ -11,6 +11,7 @@ require_once 'app/controllers/InstructorController.php';
 require_once 'app/controllers/MessageController.php';
 require_once 'app/controllers/FeedbackController.php';
 require_once 'app/controllers/SupportController.php';
+require_once 'app/controllers/AiTeacherController.php';
 
 // Route handling. Opening the app should always start at login unless a page is requested.
 $page = $_GET['page'] ?? 'login';
@@ -24,6 +25,7 @@ $instructorCtrl = new InstructorController($pdo);
 $messageCtrl = new MessageController($pdo);
 $feedbackCtrl = new FeedbackController($pdo);
 $supportCtrl = new SupportController($pdo);
+$aiTeacherCtrl = new AiTeacherController($pdo);
 
 // Simple Router
 switch ($page) {
@@ -74,6 +76,10 @@ switch ($page) {
         } else {
             $courseCtrl->dashboard();
         }
+        break;
+
+    case 'ai-teacher':
+        $aiTeacherCtrl->index();
         break;
 
     case 'courses':

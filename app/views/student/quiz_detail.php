@@ -3,8 +3,7 @@
 include __DIR__ . '/../partials/header.php';
 include __DIR__ . '/../partials/sidebar_v2.php';
 
-$display_total = max(1, min((float)($result['TotalMarks'] ?? 100), 100));
-$percentage = ($display_total > 0) ? round((($result['Score'] ?? 0) / $display_total) * 100, 1) : 0;
+$percentage = round((float)($result['Score'] ?? 0), 1);
 $pass_threshold = 50;
 $is_pass = $percentage >= $pass_threshold;
 ?>

@@ -113,6 +113,12 @@ if ($googleClientSecret === '') $googleClientSecret = getenv('GOOGLE_CLIENT_SECR
 $googleRedirectUri = $localConfig['google_redirect_uri'] ?? '';
 if ($googleRedirectUri === '') $googleRedirectUri = getenv('GOOGLE_REDIRECT_URI') ?: '';
 
+$aiTeacherApiKey = $localConfig['ai_teacher_api_key'] ?? '';
+if ($aiTeacherApiKey === '') $aiTeacherApiKey = getenv('AI_TEACHER_API_KEY') ?: getenv('OPENAI_API_KEY') ?: '';
+
+$aiTeacherModel = $localConfig['ai_teacher_model'] ?? '';
+if ($aiTeacherModel === '') $aiTeacherModel = getenv('AI_TEACHER_MODEL') ?: 'gpt-4o-mini';
+
 define('MAIL_FROM', $mailFrom);
 define('MAIL_FROM_NAME', $mailFromName);
 define('SMTP_HOST', $smtpHost);
@@ -125,6 +131,8 @@ define('SUPPORT_EMAIL', $localConfig['support_email'] ?? getenv('SUPPORT_EMAIL')
 define('GOOGLE_CLIENT_ID', $googleClientId);
 define('GOOGLE_CLIENT_SECRET', $googleClientSecret);
 define('GOOGLE_REDIRECT_URI', $googleRedirectUri !== '' ? $googleRedirectUri : rtrim(BASE_URL, '/') . '/index.php?page=google-callback');
+define('AI_TEACHER_API_KEY', $aiTeacherApiKey);
+define('AI_TEACHER_MODEL', $aiTeacherModel);
 
 $isVercelRuntime = getenv('VERCEL') === '1' || getenv('VERCEL_URL') !== false || getenv('VERCEL_PROJECT_PRODUCTION_URL') !== false;
 define('IS_LOCAL_DEV', !$isVercelRuntime && in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1', '::1'], true));

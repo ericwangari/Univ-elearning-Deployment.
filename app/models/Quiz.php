@@ -68,15 +68,31 @@ class Quiz {
     }
 
     public function saveUserAnswer($userId, $quizId, $questionId, $selectedOptionId, $isCorrect, $pointsEarned) {
+        $isCorrectValue = $this->normalizeBooleanForDb($isCorrect);
+
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, IsCorrect)
+                                         VALUES (?, ?, ?, ?)
+                                         ON CONFLICT (UserID, QuestionID) DO UPDATE
+                                         SET SelectedOptionID = EXCLUDED.SelectedOptionID,
+                                             IsCorrect = EXCLUDED.IsCorrect");
+            return $stmt->execute([$userId, $questionId, $selectedOptionId, $isCorrectValue]);
+        }
+
         $stmt = $this->pdo->prepare("INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, IsCorrect)
                                      VALUES (?, ?, ?, ?)
                                      ON DUPLICATE KEY UPDATE SelectedOptionID = ?, IsCorrect = ?");
-        return $stmt->execute([$userId, $questionId, $selectedOptionId, $isCorrect, $selectedOptionId, $isCorrect]);
+        return $stmt->execute([$userId, $questionId, $selectedOptionId, $isCorrectValue, $selectedOptionId, $isCorrectValue]);
     }
 
     public function logQuizAttempt($userId, $quizId, $score, $status = 'Graded') {
         $stmt = $this->pdo->prepare("INSERT INTO quiz_attempts (UserID, QuizID, Score, Status, SubmittedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
         return $stmt->execute([$userId, $quizId, $score, $status]);
+    }
+
+    private function normalizeBooleanForDb($value) {
+        $isTrue = $value === true || $value === 1 || $value === '1' || $value === 't' || $value === 'true';
+        return DB_DRIVER === 'pgsql' ? $isTrue : ($isTrue ? 1 : 0);
     }
 }
 ?>

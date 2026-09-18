@@ -470,18 +470,19 @@ class InstructorController {
 
         if ($answer) {
             $stmt = $this->pdo->prepare("UPDATE user_answers SET IsCorrect = ? WHERE AnswerID = ?");
-            $stmt->execute([$is_correct, $answer_id]);
+            $stmt->execute([DB_DRIVER === 'pgsql' ? (bool)$is_correct : $is_correct, $answer_id]);
 
+            $correctCondition = DB_DRIVER === 'pgsql' ? 'ua.IsCorrect = TRUE' : 'ua.IsCorrect = 1';
             $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(q.Marks), 0) FROM user_answers ua
                                          JOIN questions q ON ua.QuestionID = q.QuestionID
-                                         WHERE ua.UserID = ? AND q.QuizID = ? AND ua.IsCorrect = 1");
+                                         WHERE ua.UserID = ? AND q.QuizID = ? AND {$correctCondition}");
             $stmt->execute([$answer['UserID'], $answer['QuizID']]);
             $correctMarks = (float)$stmt->fetchColumn();
 
             $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(Marks), 0) FROM questions WHERE QuizID = ?");
             $stmt->execute([$answer['QuizID']]);
             $questionTotal = (float)$stmt->fetchColumn();
-            $score = ($questionTotal > 0) ? round(($correctMarks / $questionTotal) * 100, 2) : 0;
+            $score = ($questionTotal > 0) ? (int) round(($correctMarks / $questionTotal) * 100) : 0;
             $score = min($score, 100);
 
             $stmt = $this->pdo->prepare("UPDATE results SET Score = ? WHERE UserID = ? AND QuizID = ?");
@@ -573,21 +574,20 @@ class InstructorController {
 
         $results_sql = "SELECT u.UserID, u.Username, c.CourseID, c.CourseName,
                         SUM(CASE WHEN q.QuizType = 'Quiz' THEN best.Score ELSE 0 END) AS QuizScore,
-                        SUM(CASE WHEN q.QuizType = 'Quiz' THEN q.TotalMarks ELSE 0 END) AS QuizTotal,
+                        SUM(CASE WHEN q.QuizType = 'Quiz' THEN 100 ELSE 0 END) AS QuizTotal,
                         SUM(CASE WHEN q.QuizType = 'Midterm' THEN best.Score ELSE 0 END) AS MidtermScore,
-                        SUM(CASE WHEN q.QuizType = 'Midterm' THEN q.TotalMarks ELSE 0 END) AS MidtermTotal,
+                        SUM(CASE WHEN q.QuizType = 'Midterm' THEN 100 ELSE 0 END) AS MidtermTotal,
                         SUM(CASE WHEN q.QuizType = 'Final' THEN best.Score ELSE 0 END) AS FinalScore,
-                        SUM(CASE WHEN q.QuizType = 'Final' THEN q.TotalMarks ELSE 0 END) AS FinalTotal,
+                        SUM(CASE WHEN q.QuizType = 'Final' THEN 100 ELSE 0 END) AS FinalTotal,
                         SUM(CASE WHEN q.QuizType = 'Assignment' THEN best.Score ELSE 0 END) AS AssignmentScore,
-                        SUM(CASE WHEN q.QuizType = 'Assignment' THEN q.TotalMarks ELSE 0 END) AS AssignmentTotal,
+                        SUM(CASE WHEN q.QuizType = 'Assignment' THEN 100 ELSE 0 END) AS AssignmentTotal,
                         COUNT(*) AS TotalAttempts,
                         (SELECT COUNT(*)
                          FROM results fr
                          JOIN quizzes fq ON fr.QuizID = fq.QuizID
                          WHERE fr.UserID = best.UserID
                            AND fr.CourseID = best.CourseID
-                           AND fq.TotalMarks > 0
-                           AND ((fr.Score / fq.TotalMarks) * 100) < 50) AS FailedAttempts
+                           AND fr.Score < 50) AS FailedAttempts
                         FROM (
                             SELECT UserID, QuizID, CourseID, MAX(Score) AS Score
                             FROM results

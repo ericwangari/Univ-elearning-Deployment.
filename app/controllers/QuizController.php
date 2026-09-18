@@ -71,12 +71,7 @@ class QuizController {
                 'duration' => $duration,
             ];
             $elapsed = 0;
-            $stmt = $this->pdo->prepare(
-                "DELETE ua FROM user_answers ua
-                 JOIN questions q ON ua.QuestionID = q.QuestionID
-                 WHERE ua.UserID = ? AND q.QuizID = ?"
-            );
-            $stmt->execute([$user_id, $quiz_id]);
+            $this->deleteUserAnswersForQuiz($user_id, $quiz_id);
         }
 
         $time_left = max(0, $_SESSION['quiz_timer'][$quiz_id]['duration'] - $elapsed);
@@ -89,12 +84,7 @@ class QuizController {
                 'duration' => $duration,
             ];
 
-            $stmt = $this->pdo->prepare(
-                "DELETE ua FROM user_answers ua
-                 JOIN questions q ON ua.QuestionID = q.QuestionID
-                 WHERE ua.UserID = ? AND q.QuizID = ?"
-            );
-            $stmt->execute([$user_id, $quiz_id]);
+            $this->deleteUserAnswersForQuiz($user_id, $quiz_id);
         }
 
         // Handle quiz submission
@@ -126,10 +116,7 @@ class QuizController {
                             $answer_text = substr($answer_text, 0, $MAX_SHORT_ANSWER);
                         }
 
-                        // Save or update short answer (grading may be manual later)
-                        $stmt = $this->pdo->prepare("INSERT INTO user_answers (UserID, QuestionID, AnswerText, IsCorrect) VALUES (?, ?, ?, NULL) 
-                                                     ON DUPLICATE KEY UPDATE AnswerText = ?, IsCorrect = NULL");
-                        $stmt->execute([$user_id, $question_id, $answer_text, $answer_text]);
+                        $this->saveShortAnswer($user_id, $question_id, $answer_text);
 
                     } elseif ($qtype === 'True/False') {
                         $answer_text = ((string)$value === '1') ? 'True' : 'False';
@@ -138,13 +125,7 @@ class QuizController {
                         $option = $stmt->fetch();
 
                         if ($option) {
-                            $stmt = $this->pdo->prepare("INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, AnswerText, IsCorrect)
-                                                         VALUES (?, ?, ?, ?, ?)
-                                                         ON DUPLICATE KEY UPDATE SelectedOptionID = ?, AnswerText = ?, IsCorrect = ?");
-                            $stmt->execute([
-                                $user_id, $question_id, $option['OptionID'], (string)$value, $option['IsCorrect'],
-                                $option['OptionID'], (string)$value, $option['IsCorrect']
-                            ]);
+                            $this->saveOptionAnswer($user_id, $question_id, $option['OptionID'], (string)$value, $option['IsCorrect']);
                         }
 
                     } else {
@@ -156,14 +137,7 @@ class QuizController {
                         $option = $stmt->fetch();
 
                         if ($option) {
-                            // Save or update answer
-                            $stmt = $this->pdo->prepare("INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, IsCorrect) 
-                                                         VALUES (?, ?, ?, ?) 
-                                                         ON DUPLICATE KEY UPDATE SelectedOptionID = ?, IsCorrect = ?");
-                            $stmt->execute([
-                                $user_id, $question_id, $option_id, $option['IsCorrect'],
-                                $option_id, $option['IsCorrect']
-                            ]);
+                            $this->saveOptionAnswer($user_id, $question_id, $option_id, null, $option['IsCorrect']);
                         }
                     }
                 }
@@ -203,9 +177,10 @@ class QuizController {
         $question_total = ($result && isset($result['total_marks'])) ? (float)$result['total_marks'] : 0;
 
         // Count correct answers
+        $correctCondition = DB_DRIVER === 'pgsql' ? 'ua.IsCorrect = TRUE' : 'ua.IsCorrect = 1';
         $stmt = $this->pdo->prepare("SELECT SUM(q.Marks) as score FROM user_answers ua 
                                      JOIN questions q ON ua.QuestionID = q.QuestionID 
-                                     WHERE ua.UserID = ? AND q.QuizID = ? AND ua.IsCorrect = 1");
+                                     WHERE ua.UserID = ? AND q.QuizID = ? AND {$correctCondition}");
         $stmt->execute([$user_id, $quiz_id]);
         $result = $stmt->fetch();
         $correct_marks = ($result && isset($result['score'])) ? (float)$result['score'] : 0;
@@ -216,7 +191,7 @@ class QuizController {
         $quiz_data = $stmt->fetch();
         $course_id = $quiz_data ? $quiz_data['CourseID'] : null;
 
-        $score = ($question_total > 0) ? round(($correct_marks / $question_total) * 100, 2) : 0;
+        $score = ($question_total > 0) ? (int) round(($correct_marks / $question_total) * 100) : 0;
         $score = min($score, 100);
 
         // Save result
@@ -253,8 +228,7 @@ class QuizController {
                  JOIN quizzes q2 ON r2.QuizID = q2.QuizID
                  WHERE r2.UserID = r.UserID
                    AND r2.QuizID = r.QuizID
-                   AND q2.TotalMarks > 0
-                   AND ((r2.Score / q2.TotalMarks) * 100) < 50) AS FailedAttempts
+                   AND r2.Score < 50) AS FailedAttempts
                 FROM results r
                 JOIN courses c ON r.CourseID = c.CourseID
                 JOIN quizzes q ON r.QuizID = q.QuizID
@@ -338,5 +312,80 @@ class QuizController {
                                      WHERE ua.UserID = ? AND q.QuizID = ? AND q.QuestionType = 'Short Answer' AND ua.IsCorrect IS NULL");
         $stmt->execute([$user_id, $quiz_id]);
         return ((int)$stmt->fetchColumn()) > 0;
+    }
+
+    private function deleteUserAnswersForQuiz($user_id, $quiz_id) {
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare(
+                "DELETE FROM user_answers ua
+                 USING questions q
+                 WHERE ua.QuestionID = q.QuestionID
+                   AND ua.UserID = ?
+                   AND q.QuizID = ?"
+            );
+            $stmt->execute([$user_id, $quiz_id]);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "DELETE ua FROM user_answers ua
+             JOIN questions q ON ua.QuestionID = q.QuestionID
+             WHERE ua.UserID = ? AND q.QuizID = ?"
+        );
+        $stmt->execute([$user_id, $quiz_id]);
+    }
+
+    private function saveShortAnswer($user_id, $question_id, $answer_text) {
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO user_answers (UserID, QuestionID, AnswerText, IsCorrect)
+                VALUES (?, ?, ?, NULL)
+                ON CONFLICT (UserID, QuestionID) DO UPDATE
+                SET AnswerText = EXCLUDED.AnswerText,
+                    SelectedOptionID = NULL,
+                    IsCorrect = NULL
+            ");
+            $stmt->execute([$user_id, $question_id, $answer_text]);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO user_answers (UserID, QuestionID, AnswerText, IsCorrect)
+            VALUES (?, ?, ?, NULL)
+            ON DUPLICATE KEY UPDATE AnswerText = ?, SelectedOptionID = NULL, IsCorrect = NULL
+        ");
+        $stmt->execute([$user_id, $question_id, $answer_text, $answer_text]);
+    }
+
+    private function saveOptionAnswer($user_id, $question_id, $option_id, $answer_text, $is_correct) {
+        $isCorrectValue = $this->normalizeBooleanForDb($is_correct);
+
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, AnswerText, IsCorrect)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (UserID, QuestionID) DO UPDATE
+                SET SelectedOptionID = EXCLUDED.SelectedOptionID,
+                    AnswerText = EXCLUDED.AnswerText,
+                    IsCorrect = EXCLUDED.IsCorrect
+            ");
+            $stmt->execute([$user_id, $question_id, $option_id, $answer_text, $isCorrectValue]);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO user_answers (UserID, QuestionID, SelectedOptionID, AnswerText, IsCorrect)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE SelectedOptionID = ?, AnswerText = ?, IsCorrect = ?
+        ");
+        $stmt->execute([
+            $user_id, $question_id, $option_id, $answer_text, $isCorrectValue,
+            $option_id, $answer_text, $isCorrectValue
+        ]);
+    }
+
+    private function normalizeBooleanForDb($value) {
+        $isTrue = $value === true || $value === 1 || $value === '1' || $value === 't' || $value === 'true';
+        return DB_DRIVER === 'pgsql' ? $isTrue : ($isTrue ? 1 : 0);
     }
 }
