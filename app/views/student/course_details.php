@@ -23,7 +23,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 </p>
             </div>
             <div class="text-end d-none d-md-block">
-                <img src="/images/books.png" alt="Course" style="height: 180px; object-fit: contain;">
+                <img src="/images/icons/icon-512.png" alt="Course" style="height: 180px; object-fit: contain;">
             </div>
         </div>
     </div>

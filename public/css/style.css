@@ -232,6 +232,10 @@ img {
     transition: opacity 0.3s ease;
 }
 
+img[src$="/images/icons/icon-512.png"] {
+    border-radius: 18px;
+}
+
 img[data-error-handled="true"] {
     opacity: 0;
     pointer-events: none;
