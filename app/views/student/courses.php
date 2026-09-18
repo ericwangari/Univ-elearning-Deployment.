@@ -41,7 +41,7 @@ $sort = $_GET['sort'] ?? 'new';
             <div class="p-3 bg-soft-success rounded-4 border-0 d-flex align-items-center">
                 <div class="p-2 bg-white rounded-3 me-3"><i class="bi bi-people text-success fs-5"></i></div>
                 <div>
-                    <h6 class="mb-0 fw-bold">12k+</h6>
+                    <h6 class="mb-0 fw-bold"><?php echo $student_count; ?></h6>
                     <small class="text-muted">Students</small>
                 </div>
             </div>

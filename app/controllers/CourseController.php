@@ -155,6 +155,9 @@ class CourseController {
         $stmt->execute($params);
         $courses = $stmt->fetchAll();
 
+        $stmt = $this->pdo->query("SELECT COUNT(DISTINCT UserID) FROM enrollments");
+        $student_count = (int)$stmt->fetchColumn();
+
         require __DIR__ . '/../views/student/courses.php';
     }
 

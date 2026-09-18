@@ -694,6 +694,17 @@ img[data-error-handled="true"] {
     border-color: var(--primary-color);
 }
 
+.language-selector-form {
+    width: 124px;
+}
+
+.language-selector-form .form-select {
+    width: 100%;
+    min-width: 124px;
+    padding-right: 2.5rem;
+    white-space: nowrap;
+}
+
 /* Floating labels adjustments */
 .form-floating > label {
     padding: 1rem 0.75rem;
