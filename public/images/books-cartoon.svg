@@ -1,53 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" role="img" aria-labelledby="title desc">
   <title id="title">Stacked books with graduation cap</title>
-  <desc id="desc">A cheerful illustration of colorful books and a graduation cap.</desc>
+  <desc id="desc">A semi-realistic illustration of three stacked books with a graduation cap.</desc>
   <defs>
-    <linearGradient id="bookBlue" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#4b78d1"/>
-      <stop offset="1" stop-color="#29478f"/>
+    <linearGradient id="bookBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4e9bd0"/>
+      <stop offset="1" stop-color="#1d5e9a"/>
     </linearGradient>
-    <linearGradient id="bookCoral" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#d9786c"/>
-      <stop offset="1" stop-color="#a9444e"/>
+    <linearGradient id="bookGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2c35d"/>
+      <stop offset="1" stop-color="#bd752b"/>
     </linearGradient>
-    <linearGradient id="bookGold" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#d9a94f"/>
-      <stop offset="1" stop-color="#a8752f"/>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4cf"/>
+      <stop offset="1" stop-color="#dcbf7d"/>
     </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
-      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#1d2450" flood-opacity=".2"/>
+      <feDropShadow dx="0" dy="16" stdDeviation="13" flood-color="#15254b" flood-opacity=".25"/>
     </filter>
   </defs>
 
-  <g filter="url(#shadow)" stroke="#26345e" stroke-linecap="round" stroke-linejoin="round">
-    <path fill="#e7e9ee" stroke-width="8" d="M105 407c0-16 13-29 29-29h397c16 0 29 13 29 29v43H105z"/>
-    <path fill="url(#bookGold)" stroke-width="8" d="M78 345c0-16 13-29 29-29h406c16 0 29 13 29 29v66H78z"/>
-    <path fill="url(#bookCoral)" stroke-width="8" d="M108 270c0-16 13-29 29-29h397c16 0 29 13 29 29v67H108z"/>
-    <path fill="url(#bookBlue)" stroke-width="8" d="M141 195c0-16 13-29 29-29h369c16 0 29 13 29 29v67H141z"/>
+  <ellipse cx="320" cy="488" rx="245" ry="25" fill="#283a63" opacity=".18"/>
 
-    <path fill="none" stroke="#f4f5f8" stroke-width="6" d="M190 197v64M216 197v64M175 272v65M201 272v65M148 347v64M174 347v64"/>
-    <path fill="none" stroke="#f6d993" stroke-width="5" d="M265 350h208M265 369h166M260 425h224M260 443h188"/>
-    <path fill="none" stroke="#dfe8ff" stroke-width="5" d="M265 216h201M265 235h154"/>
-    <path fill="none" stroke="#f6d993" stroke-width="8" d="M239 319c-16 10-27 25-27 42M239 244c-16 10-27 25-27 42M239 169c-16 10-27 25-27 42"/>
-    <path fill="none" stroke="#f6d993" stroke-width="5" d="M510 350c11 8 17 20 17 33M504 274c11 8 17 20 17 33M481 198c11 8 17 20 17 33"/>
+  <g stroke="#17284b" stroke-linejoin="round" stroke-linecap="round" filter="url(#shadow)">
+    <path fill="#1b315d" stroke-width="9" d="M82 403 151 376l400 25-70 76-393-26z"/>
+    <path fill="url(#page)" stroke-width="7" d="m151 376 400 25-70 62-393-26z"/>
+    <path fill="none" stroke="#c4a76b" stroke-width="4" d="m180 389 363 24M174 399l356 23M168 410l341 22M163 421l329 21"/>
+    <path fill="none" stroke="#8fb1df" stroke-width="8" d="m114 400 7 68M143 390l7 68"/>
+
+    <path fill="url(#bookGold)" stroke-width="9" d="M64 329 136 302l408 28-70 77-408-29z"/>
+    <path fill="url(#page)" stroke-width="7" d="m136 302 408 28-70 64-408-29z"/>
+    <path fill="none" stroke="#c4a76b" stroke-width="4" d="m170 315 370 25M164 326l361 24M158 337l349 23M151 348l337 22"/>
+    <path fill="none" stroke="#fff0ad" stroke-width="9" d="M105 329 98 381M133 317l-7 53"/>
+
+    <path fill="url(#bookBlue)" stroke-width="9" d="M104 249 176 218l382 29-69 74-385-27z"/>
+    <path fill="url(#page)" stroke-width="7" d="m176 218 382 29-69 62-385-27z"/>
+    <path fill="none" stroke="#c4a76b" stroke-width="4" d="m207 232 347 25M201 242l339 25M194 252l327 25M188 263l316 24"/>
+    <path fill="none" stroke="#a9d8f0" stroke-width="8" d="m144 249 7 55M171 237l7 56"/>
+    <path fill="none" stroke="#17345e" stroke-width="6" d="M215 218c-11 20-15 35-10 51M239 220c-10 18-14 33-9 50"/>
+    <path fill="#db4c4c" stroke-width="7" d="m272 302 42 4-5 90-34-25-35 18z"/>
   </g>
 
-  <g fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="2">
-    <text x="277" y="227">LEARNING</text>
-    <text x="252" y="302">KNOWLEDGE</text>
-    <text x="250" y="378">WISDOM</text>
-  </g>
-
-  <g stroke="#26345e" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
-    <path fill="#e3b95d" stroke-width="8" d="M180 170 320 104l140 66-140 66z"/>
-    <path fill="#bf873d" stroke-width="8" d="M244 192v54c0 25 34 43 76 43s76-18 76-43v-54l-76 36z"/>
-    <path fill="none" stroke="#fff5c7" stroke-width="8" d="M320 104v31"/>
-    <path fill="none" stroke="#ff6e74" stroke-width="8" d="M458 170v66"/>
-    <circle cx="458" cy="246" r="10" fill="#d9786c" stroke-width="6"/>
-  </g>
-
-  <g fill="none" stroke="#e3b95d" stroke-linecap="round" stroke-width="8">
-    <path d="M114 145h32M130 129v32"/>
-    <path d="M490 105h26M503 92v26"/>
+  <g stroke="#17284b" stroke-linejoin="round" stroke-linecap="round" filter="url(#shadow)">
+    <path fill="#273044" stroke-width="9" d="m176 176 145-61 143 65-145 65z"/>
+    <path fill="#171f31" stroke-width="9" d="M235 181v67c0 29 37 49 85 49s86-20 86-49v-67l-86 38z"/>
+    <path fill="none" stroke="#69758b" stroke-width="5" d="m201 176 119-49 117 52M251 187l-2 52M392 187l2 51"/>
+    <path fill="none" stroke="#d89d32" stroke-width="6" d="M321 126v-28c0-18 23-23 48-12 29 13 48 29 48 50v37"/>
+    <circle cx="417" cy="177" r="13" fill="#f0b72e" stroke-width="6"/>
+    <path fill="#f0b72e" stroke-width="6" d="M417 190c-3 21-13 33-23 46 14-4 21-1 24 9 4-10 11-13 24-9-11-14-20-27-25-46z"/>
   </g>
 </svg>

@@ -33,7 +33,7 @@
             <!-- Left Side: Image/Branding -->
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
-                    <img src="/images/books-cartoon.svg?v=2" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
+                    <img src="/images/books-cartoon.svg?v=3" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
                     <p class="lead fw-normal text-white-50">Master new skills. Elevate your career.<br>Join thousands of learners worldwide.</p>
                 </div>
