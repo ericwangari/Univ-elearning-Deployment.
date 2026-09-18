@@ -232,7 +232,7 @@ img {
     transition: opacity 0.3s ease;
 }
 
-img[src$="/images/icons/icon-512.png"] {
+img[src$="/images/books-cartoon.svg"] {
     border-radius: 18px;
 }
 

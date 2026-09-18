@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" role="img" aria-labelledby="title desc">
+  <title id="title">Stacked books with graduation cap</title>
+  <desc id="desc">A cheerful illustration of colorful books and a graduation cap.</desc>
+  <defs>
+    <linearGradient id="bookBlue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#4f8cff"/>
+      <stop offset="1" stop-color="#315dcc"/>
+    </linearGradient>
+    <linearGradient id="bookCoral" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ff8b72"/>
+      <stop offset="1" stop-color="#e85d63"/>
+    </linearGradient>
+    <linearGradient id="bookGold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffd86b"/>
+      <stop offset="1" stop-color="#f3ad3d"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#1d2450" flood-opacity=".2"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)" stroke="#273267" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#f7fbff" stroke-width="8" d="M112 410c0-18 15-33 33-33h360c18 0 33 15 33 33v38H112z"/>
+    <path fill="url(#bookGold)" stroke-width="8" d="M85 350c0-17 14-31 31-31h390c17 0 31 14 31 31v65H85z"/>
+    <path fill="url(#bookCoral)" stroke-width="8" d="M116 277c0-17 14-31 31-31h380c17 0 31 14 31 31v64H116z"/>
+    <path fill="url(#bookBlue)" stroke-width="8" d="M148 204c0-17 14-31 31-31h354c17 0 31 14 31 31v65H148z"/>
+
+    <path fill="none" stroke="#dce8ff" stroke-width="7" d="M190 205v63M219 205v63M190 278v63M219 278v63M165 351v63M195 351v63"/>
+    <path fill="none" stroke="#fff2ae" stroke-width="7" d="M275 359h178M275 286h205M270 432h173"/>
+    <path fill="none" stroke="#fff" stroke-width="7" d="M280 220h135M280 238h103"/>
+  </g>
+
+  <g stroke="#273267" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+    <path fill="#ffd86b" stroke-width="8" d="M180 170 320 104l140 66-140 66z"/>
+    <path fill="#f3ad3d" stroke-width="8" d="M244 192v54c0 25 34 43 76 43s76-18 76-43v-54l-76 36z"/>
+    <path fill="none" stroke="#fff5c7" stroke-width="8" d="M320 104v31"/>
+    <path fill="none" stroke="#ff6e74" stroke-width="8" d="M458 170v66"/>
+    <circle cx="458" cy="246" r="10" fill="#ff6e74" stroke-width="6"/>
+  </g>
+
+  <g fill="none" stroke="#ffcf4a" stroke-linecap="round" stroke-width="10">
+    <path d="M114 145h32M130 129v32"/>
+    <path d="M490 105h26M503 92v26"/>
+  </g>
+</svg>
