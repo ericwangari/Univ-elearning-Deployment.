@@ -35,7 +35,7 @@
                 <div style="z-index: 1;" class="text-center">
                     <img src="/images/books-cartoon.svg?v=4" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
-                    <p class="lead fw-normal text-white-50">Master new skills. Elevate your career.<br>Join thousands of learners worldwide.</p>
+                    <p class="lead fw-normal text-white-50">Access your courses, quizzes, results, and learning tools in one place.</p>
                 </div>
             </div>
             

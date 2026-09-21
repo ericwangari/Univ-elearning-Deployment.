@@ -43,7 +43,7 @@
                     
                     <div class="mb-4 border-bottom pb-3">
                         <h2 class="fw-bold text-dark mb-2">Create an Account</h2>
-                        <p class="text-muted">Join our community and start learning today.</p>
+                        <p class="text-muted">Create your account to access courses, assessments, and learning support.</p>
                     </div>
 
                     <?php if (isset($errors) && !empty($errors)): ?>
@@ -132,8 +132,8 @@
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
                     <img src="/images/books-cartoon.svg?v=4" alt="Register" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
-                    <h2 class="display-6 fw-bold mb-3">Unlock Your Potential</h2>
-                    <p class="lead fw-normal text-white-50 px-5">Get unlimited access to top-tier courses, expert instructors, and a community of ambitious learners.</p>
+                    <h2 class="display-6 fw-bold mb-3">Start Learning</h2>
+                    <p class="lead fw-normal text-white-50 px-5">Use Univ E-Learning to manage coursework, complete assessments, and track progress.</p>
                 </div>
             </div>
         </div>
