@@ -95,6 +95,15 @@
                             <div class="invalid-feedback">Password confirmation is required.</div>
                         </div>
 
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" name="terms_accepted" value="1" id="termsAccepted" required>
+                            <label class="form-check-label small text-muted" for="termsAccepted">
+                                I agree to the
+                                <a href="?page=terms" target="_blank" rel="noopener" class="text-primary fw-semibold text-decoration-none">User Agreement and Terms</a>.
+                            </label>
+                            <div class="invalid-feedback">You must agree before creating an account.</div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary w-100 py-3 mb-3 fw-bold shadow-sm rounded-3 fs-5 position-relative overflow-hidden group">
                             <span class="position-relative z-1">Create Account</span>
                         </button>
@@ -105,6 +114,13 @@
 
                     <form method="GET" action="index.php">
                         <input type="hidden" name="page" value="google-login">
+                        <div class="form-check mb-3 text-start">
+                            <input class="form-check-input" type="checkbox" name="terms_accepted" value="1" id="googleTermsAccepted" required>
+                            <label class="form-check-label small text-muted" for="googleTermsAccepted">
+                                I agree to the
+                                <a href="?page=terms" target="_blank" rel="noopener" class="text-primary fw-semibold text-decoration-none">User Agreement and Terms</a>.
+                            </label>
+                        </div>
                         <div class="input-group">
                             <select name="role" class="form-select" aria-label="Google registration role">
                                 <option value="Student">Student</option>
@@ -132,6 +148,7 @@
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
                     <img src="/images/books-cartoon.svg?v=4" alt="Register" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
+                    <div class="auth-brand-logo" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></div>
                     <h2 class="display-6 fw-bold mb-3">Start Learning</h2>
                     <p class="lead fw-normal text-white-50 px-5">Use Univ E-Learning to manage coursework, complete assessments, and track progress.</p>
                 </div>

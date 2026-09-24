@@ -450,6 +450,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const cookieConsent = document.getElementById('cookieConsent');
+    const cookieConsentAccept = document.getElementById('cookieConsentAccept');
+    if (cookieConsent && localStorage.getItem('univCookieConsent') !== 'accepted') {
+        cookieConsent.hidden = false;
+    }
+    if (cookieConsentAccept) {
+        cookieConsentAccept.addEventListener('click', function() {
+            localStorage.setItem('univCookieConsent', 'accepted');
+            if (cookieConsent) {
+                cookieConsent.hidden = true;
+            }
+        });
+    }
+
+    const announcementModalEl = document.getElementById('platformAnnouncementModal');
+    if (
+        announcementModalEl &&
+        typeof bootstrap !== 'undefined' &&
+        localStorage.getItem('univAnnouncementSeen') !== '2026-09-platform-update'
+    ) {
+        const announcementModal = new bootstrap.Modal(announcementModalEl);
+        announcementModal.show();
+        announcementModalEl.addEventListener('hidden.bs.modal', function() {
+            localStorage.setItem('univAnnouncementSeen', '2026-09-platform-update');
+        }, { once: true });
+    }
 });
 
 // Helper for displaying SweetAlert notifications

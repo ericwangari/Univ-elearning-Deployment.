@@ -33,7 +33,7 @@ class AppPDOStatement {
         if (!is_array($row) || $this->driver !== 'pgsql') return $row;
         $map = [
             'userid'=>'UserID','username'=>'Username','email'=>'Email','password'=>'Password','usertype'=>'UserType','status'=>'Status',
-            'emailverifiedat'=>'EmailVerifiedAt','createdat'=>'CreatedAt','lastactiveat'=>'LastActiveAt','tokenid'=>'TokenID','tokenhash'=>'TokenHash',
+            'emailverifiedat'=>'EmailVerifiedAt','createdat'=>'CreatedAt','lastactiveat'=>'LastActiveAt','termsacceptedat'=>'TermsAcceptedAt','tokenid'=>'TokenID','tokenhash'=>'TokenHash',
             'expiresat'=>'ExpiresAt','usedat'=>'UsedAt','courseid'=>'CourseID','coursename'=>'CourseName','description'=>'Description','enrollmentid'=>'EnrollmentID',
             'enrollmentdate'=>'EnrollmentDate','completionstatus'=>'CompletionStatus','contentid'=>'ContentID','contenttype'=>'ContentType','contenttitle'=>'ContentTitle',
             'contenturl'=>'ContentURL','createdby'=>'CreatedBy','updatedat'=>'UpdatedAt','quizid'=>'QuizID','quizname'=>'QuizName','quiztype'=>'QuizType',

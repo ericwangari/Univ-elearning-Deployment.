@@ -46,6 +46,9 @@ $user_type = $_SESSION['user_type'] ?? 'Student';
         </a>
 
         <hr class="bg-light">
+        <a href="?page=delete-account" class="list-group-item list-group-item-action bg-dark text-warning border-0 py-3 rounded mb-1 <?php echo (($_GET['page'] ?? '') == 'delete-account') ? 'active bg-primary text-white' : ''; ?>">
+            <i class="bi bi-person-x me-2"></i> Delete My Account
+        </a>
         <a href="?page=logout" class="list-group-item list-group-item-action bg-dark text-danger border-0 py-3 rounded">
             <i class="bi bi-box-arrow-right me-2"></i> Logout
         </a>

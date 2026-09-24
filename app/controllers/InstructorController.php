@@ -358,11 +358,16 @@ class InstructorController {
         }
 
         $quiz_id = $_POST['quiz_id'] ?? null;
-        $question_text = $_POST['question_text'] ?? '';
+        $question_text = trim($_POST['question_text'] ?? '');
         $question_type = $_POST['question_type'] ?? 'Multiple Choice';
         $marks = $_POST['marks'] ?? 1;
+        $redirect = $_SERVER['HTTP_REFERER'] ?? 'index.php?page=manage-courses';
 
         if (!empty($question_text)) {
+            if (!in_array($question_type, ['Multiple Choice', 'True/False', 'Short Answer'], true)) {
+                $question_type = 'Multiple Choice';
+            }
+
             // Ensure we don't exceed the quiz total when adding questions
             $stmt = $this->pdo->prepare("SELECT TotalMarks FROM quizzes WHERE QuizID = ?");
             $stmt->execute([$quiz_id]);
@@ -377,7 +382,7 @@ class InstructorController {
             if ($available <= 0) {
                 // No space left for more marks
                 $_SESSION['error'] = 'This assessment already has the full total marks assigned. Remove or adjust existing questions before adding more.';
-                header("Location: " . $_SERVER['HTTP_REFERER']);
+                header("Location: " . $redirect);
                 exit;
             }
 
@@ -389,36 +394,84 @@ class InstructorController {
                 $clamped = true;
             }
 
-            $stmt = $this->pdo->prepare("INSERT INTO questions (QuizID, QuestionText, QuestionType, Marks) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$quiz_id, $question_text, $question_type, $marks]);
+            $options = [];
+            $correct_option = $_POST['correct_option'] ?? null;
+
+            if ($question_type === 'Multiple Choice') {
+                foreach (($_POST['options'] ?? []) as $index => $option_text) {
+                    $option_text = trim((string)$option_text);
+                    if ($option_text !== '') {
+                        $options[(string)$index] = $option_text;
+                    }
+                }
+
+                if (count($options) < 2) {
+                    $_SESSION['error'] = 'Multiple-choice questions need at least two answer options.';
+                    header("Location: " . $redirect);
+                    exit;
+                }
+
+                if ($correct_option === null || !array_key_exists((string)$correct_option, $options)) {
+                    $_SESSION['error'] = 'Choose one correct answer for the multiple-choice question.';
+                    header("Location: " . $redirect);
+                    exit;
+                }
+            }
+
+            try {
+                $this->pdo->beginTransaction();
+                $question_id = $this->insertQuestion($quiz_id, $question_text, $question_type, $marks);
+
+                // Add options if multiple choice
+                if ($question_type === 'Multiple Choice') {
+                    foreach ($options as $index => $option_text) {
+                        $this->insertQuestionOption($question_id, $option_text, (string)$correct_option === (string)$index);
+                    }
+                } elseif ($question_type === 'True/False') {
+                    $correct_answer = $_POST['true_false_answer'] ?? '1';
+                    $this->insertQuestionOption($question_id, 'True', $correct_answer === '1');
+                    $this->insertQuestionOption($question_id, 'False', $correct_answer === '0');
+                }
+
+                $this->pdo->commit();
+            } catch (Exception $e) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+
+                error_log('Question add failed: ' . $e->getMessage());
+                $_SESSION['error'] = 'Question could not be added. Please check the question details and try again.';
+                header("Location: " . $redirect);
+                exit;
+            }
 
             if ($clamped) {
                 $_SESSION['success'] = "Question added successfully, but marks were reduced to {$marks} so the assessment stays within the total {$quizTotal} points.";
             } else {
                 $_SESSION['success'] = 'Question added successfully.';
             }
-
-            $question_id = $this->pdo->lastInsertId();
-
-            // Add options if multiple choice
-            if ($question_type === 'Multiple Choice' && isset($_POST['options'])) {
-                foreach ($_POST['options'] as $index => $option_text) {
-                    if (!empty($option_text)) {
-                        $is_correct = isset($_POST['correct_option']) && $_POST['correct_option'] == $index;
-                        $stmt = $this->pdo->prepare("INSERT INTO question_options (QuestionID, OptionText, IsCorrect) VALUES (?, ?, ?)");
-                        $stmt->execute([$question_id, $option_text, $is_correct]);
-                    }
-                }
-            } elseif ($question_type === 'True/False') {
-                $correct_answer = $_POST['true_false_answer'] ?? '1';
-                $stmt = $this->pdo->prepare("INSERT INTO question_options (QuestionID, OptionText, IsCorrect) VALUES (?, ?, ?)");
-                $stmt->execute([$question_id, 'True', $correct_answer === '1' ? 1 : 0]);
-                $stmt->execute([$question_id, 'False', $correct_answer === '0' ? 1 : 0]);
-            }
         }
 
-        header("Location: " . $_SERVER['HTTP_REFERER']);
+        header("Location: " . $redirect);
         exit;
+    }
+
+    private function insertQuestion($quiz_id, $question_text, $question_type, $marks) {
+        if (DB_DRIVER === 'pgsql') {
+            $stmt = $this->pdo->prepare("INSERT INTO questions (QuizID, QuestionText, QuestionType, Marks) VALUES (?, ?, ?, ?) RETURNING QuestionID");
+            $stmt->execute([$quiz_id, $question_text, $question_type, $marks]);
+            return $stmt->fetchColumn();
+        }
+
+        $stmt = $this->pdo->prepare("INSERT INTO questions (QuizID, QuestionText, QuestionType, Marks) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$quiz_id, $question_text, $question_type, $marks]);
+        return $this->pdo->lastInsertId();
+    }
+
+    private function insertQuestionOption($question_id, $option_text, $is_correct) {
+        $isCorrectValue = DB_DRIVER === 'pgsql' ? (bool)$is_correct : ($is_correct ? 1 : 0);
+        $stmt = $this->pdo->prepare("INSERT INTO question_options (QuestionID, OptionText, IsCorrect) VALUES (?, ?, ?)");
+        $stmt->execute([$question_id, $option_text, $isCorrectValue]);
     }
 
     public function deleteQuestion() {

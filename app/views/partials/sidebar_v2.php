@@ -66,6 +66,9 @@ if (empty($current_page)) {
         </a>
 
         <hr class="bg-light">
+        <a href="?page=delete-account" class="list-group-item list-group-item-action bg-dark text-warning border-0 py-3 rounded mb-1 <?php echo ($current_page == 'delete-account') ? 'active bg-primary text-white' : ''; ?>">
+            <i class="bi bi-person-x me-2"></i> Delete My Account
+        </a>
         <a href="?page=logout" class="list-group-item list-group-item-action bg-dark text-danger border-0 py-3 rounded">
             <i class="bi bi-box-arrow-right me-2"></i> <?php echo __('nav_logout'); ?>
         </a>

@@ -96,8 +96,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                         <?php else: ?>
                             <?php foreach ($results as $result): ?>
                                 <?php
-                                    $total_marks = max((int)($result['TotalMarks'] ?? 100), 1);
-                                    $percentage = round(($result['Score'] / $total_marks) * 100, 1);
+                                    $percentage = round((float)($result['Score'] ?? 0), 1);
                                 ?>
                                 <tr>
                                     <td class="ps-4">
@@ -119,7 +118,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                                     <td><?php echo htmlspecialchars($result['CourseName']); ?></td>
                                     <td>
                                         <span class="fw-bold">
-                                            <?php echo $result['Score']; ?>/<?php echo $total_marks; ?>
+                                            <?php echo number_format($percentage, 1); ?>/100
                                         </span>
                                     </td>
                                     <td><?php echo $percentage; ?>%</td>
@@ -142,4 +141,3 @@ include __DIR__ . '/../partials/sidebar_v2.php';
 </div>
 
 <?php include __DIR__ . '/../partials/footer.php'; ?>
-

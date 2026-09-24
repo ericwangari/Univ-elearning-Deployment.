@@ -7,7 +7,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
 <div class="container-fluid p-4">
     <div class="row justify-content-center">
         <div class="col-lg-8 quiz-container">
-            <?php $quiz_completed = isset($last_result) && !$allow_retry; ?>
+            <?php $quiz_completed = !empty($last_result) && !$allow_retry; ?>
             <div class="mb-4 d-flex justify-content-between align-items-center">
                 <a href="?page=course-details&id=<?php echo isset($quiz['CourseID']) ? $quiz['CourseID'] : ''; ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i class="bi bi-arrow-left me-1"></i> Back to Course
@@ -49,14 +49,14 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 <div class="card-body p-5 bg-white">
                     <?php if ($quiz_completed): ?>
                         <div class="text-center py-5">
-                            <h4 class="fw-bold mb-3">Quiz Completed</h4>
-                            <p class="text-muted mb-4">Your previous attempt has been recorded. To take the quiz again, click the button below.</p>
+                            <h4 class="fw-bold mb-3">Previous Attempt Recorded</h4>
+                            <p class="text-muted mb-4">A previous submission is on record for this assessment. If you scored below 50%, you can start a new attempt below.</p>
                             <div class="row justify-content-center">
                                 <div class="col-md-8">
                                     <div class="card border-0 shadow-sm mb-4">
                                         <div class="card-body">
                                             <h5 class="mb-2">Last Attempt</h5>
-                                            <?php $last_display_total = max(1, min((float)($last_result['TotalMarks'] ?? 100), 100)); $last_percentage = ($last_display_total > 0) ? round((($last_result['Score'] ?? 0) / $last_display_total) * 100, 1) : 0; ?>
+                                            <?php $last_percentage = round((float)($last_result['Score'] ?? 0), 1); ?>
                                             <p class="mb-1"><strong>Score:</strong> <?php echo number_format($last_percentage, 1); ?> / 100</p>
                                             <p class="mb-1"><strong>Percentage:</strong> <?php echo $last_percentage; ?>%</p>
                                             <p class="mb-0"><strong>Status:</strong> <?php echo $last_percentage >= 50 ? 'Passed' : 'Needs Improvement'; ?></p>
@@ -160,36 +160,6 @@ include __DIR__ . '/../partials/sidebar_v2.php';
 </div>
 
 <script>
-function submitQuizConfirm(e) {
-    e.preventDefault();
-    const form = document.getElementById('quizForm');
-    if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        showNotification('Incomplete', 'Please answer all questions before submitting.', 'warning');
-        return;
-    }
-    
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Submit Quiz?',
-            text: "Are you sure you want to lock in your answers?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#ef4444',
-            confirmButtonText: 'Yes, submit it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('realSubmitBtn').click();
-            }
-        });
-    } else {
-        if (confirm('Are you sure you want to submit?')) {
-            document.getElementById('realSubmitBtn').click();
-        }
-    }
-}
-
 // Simple timer simulation
 let timeLeft = <?php echo isset($time_left) ? (int)$time_left : 1800; ?>;
 const timerEl = document.getElementById('quiz-timer');
@@ -263,7 +233,6 @@ function submitQuizConfirm(e) {
         Swal.fire({
             title: 'Submit Quiz?',
             text: "Are you sure you want to lock in your answers?",
-            icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#10b981',
             cancelButtonColor: '#ef4444',

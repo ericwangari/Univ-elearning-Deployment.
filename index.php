@@ -12,6 +12,7 @@ require_once 'app/controllers/MessageController.php';
 require_once 'app/controllers/FeedbackController.php';
 require_once 'app/controllers/SupportController.php';
 require_once 'app/controllers/AiTeacherController.php';
+require_once 'app/controllers/AccountController.php';
 
 // Route handling. Opening the app should always start at login unless a page is requested.
 $page = $_GET['page'] ?? 'login';
@@ -26,6 +27,7 @@ $messageCtrl = new MessageController($pdo);
 $feedbackCtrl = new FeedbackController($pdo);
 $supportCtrl = new SupportController($pdo);
 $aiTeacherCtrl = new AiTeacherController($pdo);
+$accountCtrl = new AccountController($pdo);
 
 // Simple Router
 switch ($page) {
@@ -43,6 +45,10 @@ switch ($page) {
 
     case 'contact-support':
         $supportCtrl->contact();
+        break;
+
+    case 'terms':
+        require 'app/views/legal/terms.php';
         break;
 
     case 'google-login':
@@ -80,6 +86,10 @@ switch ($page) {
 
     case 'ai-teacher':
         $aiTeacherCtrl->index();
+        break;
+
+    case 'delete-account':
+        $accountCtrl->deleteAccount();
         break;
 
     case 'courses':

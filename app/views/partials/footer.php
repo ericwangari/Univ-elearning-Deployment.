@@ -9,6 +9,8 @@
             <i class="bi bi-envelope-heart me-1" aria-hidden="true"></i>
             <?php echo __('support'); ?>: <?php echo htmlspecialchars(SUPPORT_EMAIL, ENT_QUOTES, 'UTF-8'); ?>
         </a>
+        <span class="mx-2" aria-hidden="true">&middot;</span>
+        <a href="?page=terms" class="text-muted text-decoration-none">Terms</a>
     </footer>
 </div> <!-- /#page-content-wrapper -->
 </div> <!-- /#wrapper -->
@@ -63,6 +65,39 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<div class="cookie-consent" id="cookieConsent" hidden>
+    <div>
+        <strong>Cookies</strong>
+        <p class="mb-0">We use essential cookies for sign-in, language, security, and app preferences.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="?page=terms" class="btn btn-sm btn-light">Learn more</a>
+        <button type="button" class="btn btn-sm btn-primary" id="cookieConsentAccept">Accept</button>
+    </div>
+</div>
+
+<?php if (isLoggedIn()): ?>
+    <div class="modal fade" id="platformAnnouncementModal" tabindex="-1" aria-labelledby="platformAnnouncementTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="platformAnnouncementTitle">
+                        <i class="bi bi-megaphone text-primary me-2"></i> Platform Update
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">AI Teacher, support, course access, and assessment tools are available from your dashboard navigation.</p>
+                    <p class="text-muted small mb-0">This announcement appears once per browser after sign-in.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+                </div>
             </div>
         </div>
     </div>

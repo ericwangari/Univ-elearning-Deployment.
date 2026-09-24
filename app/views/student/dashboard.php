@@ -153,8 +153,8 @@ $average_score = $average_score ?? 0;
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted"><?php echo date('M d', strtotime($result['SubmittedAt'])); ?></small>
-                                    <span class="fw-bold <?php echo ($result['Score'] >= ($result['TotalMarks'] * 0.7)) ? 'text-success' : 'text-danger'; ?>">
-                                        <?php echo $result['Score']; ?>/<?php echo $result['TotalMarks']; ?>
+                                    <span class="fw-bold <?php echo ((float)$result['Score'] >= 70) ? 'text-success' : 'text-danger'; ?>">
+                                        <?php echo number_format((float)$result['Score'], 1); ?>/100
                                     </span>
                                 </div>
                             </div>

@@ -260,6 +260,17 @@ if (DB_DRIVER !== 'pgsql') {
             FOREIGN KEY (SenderID) REFERENCES users(UserID) ON DELETE CASCADE,
             FOREIGN KEY (ReceiverID) REFERENCES users(UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB;",
+        "CREATE TABLE IF NOT EXISTS support_requests (
+            RequestID INT AUTO_INCREMENT PRIMARY KEY,
+            UserID INT NULL,
+            Name VARCHAR(100) NOT NULL,
+            Email VARCHAR(150) NOT NULL,
+            Topic VARCHAR(100) NOT NULL,
+            Message TEXT NOT NULL,
+            EmailSent TINYINT(1) NOT NULL DEFAULT 0,
+            CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_support_requests_user (UserID)
+        ) ENGINE=InnoDB;",
     ];
 
     foreach ($schemaUpdates as $schemaUpdate) {
@@ -285,6 +296,16 @@ if (DB_DRIVER !== 'pgsql') {
             messagetext TEXT NOT NULL,
             sentat TIMESTAMP NOT NULL DEFAULT NOW(),
             isread BOOLEAN NOT NULL DEFAULT FALSE
+        )",
+        "CREATE TABLE IF NOT EXISTS support_requests (
+            requestid SERIAL PRIMARY KEY,
+            userid INT NULL,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(150) NOT NULL,
+            topic VARCHAR(100) NOT NULL,
+            message TEXT NOT NULL,
+            emailsent BOOLEAN NOT NULL DEFAULT FALSE,
+            createdat TIMESTAMP NOT NULL DEFAULT NOW()
         )",
     ];
 
@@ -335,6 +356,24 @@ try {
     }
 } catch (Exception $e) {
     error_log("Presence tracking column warning: " . $e->getMessage());
+}
+
+try {
+    $colCheck = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = :col"
+    );
+    $columnName = DB_DRIVER === 'pgsql' ? 'termsacceptedat' : 'TermsAcceptedAt';
+    $colCheck->execute([':col' => $columnName]);
+    if ((int)$colCheck->fetchColumn() === 0) {
+        if (DB_DRIVER === 'pgsql') {
+            $pdo->exec('ALTER TABLE users ADD COLUMN termsacceptedat TIMESTAMP NULL DEFAULT NULL');
+        } else {
+            $pdo->exec("ALTER TABLE users ADD COLUMN TermsAcceptedAt DATETIME NULL DEFAULT NULL AFTER LastActiveAt");
+        }
+    }
+} catch (Exception $e) {
+    error_log("Terms acceptance column warning: " . $e->getMessage());
 }
 
 /* -----------------------------

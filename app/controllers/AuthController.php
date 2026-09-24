@@ -81,6 +81,7 @@ class AuthController {
             $password = $_POST['password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
             $user_type = $_POST['user_type'] ?? 'Student';
+            $terms_accepted = isset($_POST['terms_accepted']) && $_POST['terms_accepted'] === '1';
 
             $errors = [];
 
@@ -105,6 +106,9 @@ class AuthController {
             if ($user_type === 'Admin') {
                 $errors[] = "Administrator accounts cannot be created via public registration.";
             }
+            if (!$terms_accepted) {
+                $errors[] = "You must agree to the user agreement and terms before creating an account.";
+            }
 
             if (empty($errors)) {
                 try {
@@ -128,7 +132,7 @@ class AuthController {
                             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                             $status = ($user_type === 'Instructor') ? 'Pending' : 'Approved';
 
-                            $userId = $this->createUser($username, $email, $hashed_password, $user_type, $status);
+                            $userId = $this->createUser($username, $email, $hashed_password, $user_type, $status, false, $terms_accepted);
 
                             $verificationEmailSent = $this->createAndSendEmailVerificationOtp($userId, $email, $username);
                             $localAutoVerified = !$verificationEmailSent && defined('IS_LOCAL_DEV') && IS_LOCAL_DEV;
@@ -351,6 +355,7 @@ class AuthController {
 
         $_SESSION['google_oauth_state'] = $state;
         $_SESSION['google_oauth_role'] = $role;
+        $_SESSION['google_terms_accepted'] = isset($_GET['terms_accepted']) && $_GET['terms_accepted'] === '1';
 
         $params = [
             'client_id' => GOOGLE_CLIENT_ID,
@@ -375,7 +380,8 @@ class AuthController {
         $state = $_GET['state'] ?? '';
         $expectedState = $_SESSION['google_oauth_state'] ?? '';
         $role = $_SESSION['google_oauth_role'] ?? 'Student';
-        unset($_SESSION['google_oauth_state'], $_SESSION['google_oauth_role']);
+        $googleTermsAccepted = !empty($_SESSION['google_terms_accepted']);
+        unset($_SESSION['google_oauth_state'], $_SESSION['google_oauth_role'], $_SESSION['google_terms_accepted']);
 
         if ($state === '' || $expectedState === '' || !hash_equals($expectedState, $state)) {
             $error = "Google sign-in could not be verified. Please try again.";
@@ -429,10 +435,16 @@ class AuthController {
         try {
             $user = $this->findUserByEmail($email);
             if (!$user) {
+                if (!$googleTermsAccepted) {
+                    $error = "Please create Google accounts from the registration page and agree to the user agreement first.";
+                    require __DIR__ . '/../views/auth/login.php';
+                    return;
+                }
+
                 $username = $this->makeUniqueUsername($displayName !== '' ? $displayName : $email);
                 $status = $role === 'Instructor' ? 'Pending' : 'Approved';
                 $password = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
-                $userId = $this->createUser($username, $email, $password, $role, $status, true);
+                $userId = $this->createUser($username, $email, $password, $role, $status, true, true);
                 $user = $this->findUserById($userId);
             } elseif (empty($user['EmailVerifiedAt'])) {
                 $stmt = $this->pdo->prepare("UPDATE users SET EmailVerifiedAt = NOW() WHERE UserID = ?");
@@ -503,11 +515,13 @@ class AuthController {
         $stmt->execute([$userId]);
     }
 
-    private function createUser($username, $email, $password, $userType, $status, $emailVerified = false) {
+    private function createUser($username, $email, $password, $userType, $status, $emailVerified = false, $termsAccepted = false) {
+        $termsAcceptedSql = $termsAccepted ? "NOW()" : "NULL";
+
         if (DB_DRIVER === 'pgsql') {
             $stmt = $this->pdo->prepare("
-                INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt)
-                VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ")
+                INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt, TermsAcceptedAt)
+                VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ", {$termsAcceptedSql})
                 RETURNING UserID
             ");
             $stmt->execute([$username, $email, $password, $userType, $status]);
@@ -515,8 +529,8 @@ class AuthController {
         }
 
         $stmt = $this->pdo->prepare("
-            INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt)
-            VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ")
+            INSERT INTO users (Username, Email, Password, UserType, Status, EmailVerifiedAt, TermsAcceptedAt)
+            VALUES (?, ?, ?, ?, ?, " . ($emailVerified ? "NOW()" : "NULL") . ", {$termsAcceptedSql})
         ");
         $stmt->execute([$username, $email, $password, $userType, $status]);
         return (int) $this->pdo->lastInsertId();

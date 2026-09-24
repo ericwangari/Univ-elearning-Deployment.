@@ -35,14 +35,21 @@ class SupportController {
         }
 
         if (empty($errors)) {
-            if ($this->sendSupportEmail($name, $email, $topic, $message)) {
+            $emailSent = $this->sendSupportEmail($name, $email, $topic, $message);
+            $this->storeSupportRequest($name, $email, $topic, $message, $emailSent);
+
+            if ($emailSent) {
                 $success_message = 'Thanks, your support request was sent.';
                 $name = '';
                 $email = '';
                 $topic = 'General support';
                 $message = '';
             } else {
-                $errors[] = 'Support email could not be sent right now. You can email us directly instead.';
+                $success_message = 'Thanks, your support request was saved. Email delivery is not configured right now, so you can also email us directly if it is urgent.';
+                $name = '';
+                $email = '';
+                $topic = 'General support';
+                $message = '';
             }
         }
 
@@ -80,6 +87,26 @@ class SupportController {
         }
 
         return $this->sendPhpMailerEmail($to, $subject, $body, $fromEmail, $fromName, $replyTo);
+    }
+
+    private function storeSupportRequest($name, $email, $topic, $message, $emailSent) {
+        try {
+            $emailSentValue = DB_DRIVER === 'pgsql' ? (bool)$emailSent : ($emailSent ? 1 : 0);
+            $stmt = $this->pdo->prepare("
+                INSERT INTO support_requests (UserID, Name, Email, Topic, Message, EmailSent)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $_SESSION['user_id'] ?? null,
+                $name,
+                $email,
+                $topic,
+                $message,
+                $emailSentValue,
+            ]);
+        } catch (Exception $e) {
+            error_log('Support request store failed: ' . $e->getMessage());
+        }
     }
 
     private function sendPhpMailerEmail($to, $subject, $message, $fromEmail, $fromName, $replyTo) {

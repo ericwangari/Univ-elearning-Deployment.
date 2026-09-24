@@ -11,6 +11,7 @@ require_once __DIR__ . '/../app/controllers/MessageController.php';
 require_once __DIR__ . '/../app/controllers/FeedbackController.php';
 require_once __DIR__ . '/../app/controllers/SupportController.php';
 require_once __DIR__ . '/../app/controllers/AiTeacherController.php';
+require_once __DIR__ . '/../app/controllers/AccountController.php';
 
 $page = $_GET['page'] ?? 'login';
 
@@ -23,6 +24,7 @@ $message = new MessageController($pdo);
 $feedback = new FeedbackController($pdo);
 $support = new SupportController($pdo);
 $aiTeacher = new AiTeacherController($pdo);
+$account = new AccountController($pdo);
 
 switch ($page) {
 
@@ -39,6 +41,10 @@ switch ($page) {
 
     case 'contact-support':
         $support->contact();
+        break;
+
+    case 'terms':
+        require __DIR__ . '/../app/views/legal/terms.php';
         break;
 
     case 'google-login':
@@ -67,6 +73,10 @@ switch ($page) {
 
     case 'ai-teacher':
         $aiTeacher->index();
+        break;
+
+    case 'delete-account':
+        $account->deleteAccount();
         break;
 
     case 'course-details':

@@ -91,6 +91,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                                             <?php
                                                 echo match($instructor['Status']) {
                                                     'Approved' => 'Active',
+                                                    'Pending' => 'Pending Review',
                                                     'Rejected' => 'Inactive',
                                                     default => $instructor['Status']
                                                 };
