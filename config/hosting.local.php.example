@@ -30,6 +30,16 @@ return [
     // Public support address shown to users
     'support_email' => 'support@example.com',
 
+    // SMTP email settings for contact support, feedback, and verification emails
+    'mail_from' => 'no-reply@example.com',
+    'mail_from_name' => 'Univ E-Learning',
+    'smtp_host' => 'smtp.gmail.com',
+    'smtp_port' => '587',
+    'smtp_username' => 'no-reply@example.com',
+    'smtp_password' => '',
+    'smtp_secure' => 'tls',
+    'platform_feedback_email' => 'support@example.com',
+
     // Google OAuth settings for Sign in with Google
     'google_client_id' => '',
     'google_client_secret' => '',
