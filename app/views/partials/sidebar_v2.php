@@ -14,7 +14,7 @@ if (empty($current_page)) {
     <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
         <div class="sidebar-heading border-bottom p-3 fs-5 fw-bold text-center text-primary">
             <span class="sidebar-logo-mark me-2" aria-hidden="true">
-                <i class="bi bi-mortarboard-fill"></i>
+                <img src="/images/univ-learning-logo.svg?v=1" alt="" class="brand-logo-img">
             </span>
             <span class="sidebar-brand-text">Univ<span class="text-white">Learning</span></span>
             <button type="button" class="btn btn-sm btn-outline-light sidebar-close-btn d-lg-none" id="sidebar-close" aria-label="Close navigation">

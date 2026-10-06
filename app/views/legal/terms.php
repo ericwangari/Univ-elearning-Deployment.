@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Agreement - <?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></title>
-    <link rel="icon" type="image/png" href="/images/icons/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="/images/univ-learning-logo.svg?v=1">
     <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

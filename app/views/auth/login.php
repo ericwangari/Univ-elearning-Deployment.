@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></title>
-    <link rel="icon" type="image/png" href="/images/icons/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="/images/univ-learning-logo.svg?v=1">
     <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -34,7 +34,7 @@
             <div class="col-lg-6 d-none d-lg-flex auth-bg align-items-center justify-content-center flex-column text-white p-5 animate__animated animate__fadeIn">
                 <div style="z-index: 1;" class="text-center">
                     <img src="/images/books-cartoon.svg?v=4" alt="E-Learning" class="img-fluid mb-5" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));">
-                    <div class="auth-brand-logo" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></div>
+                    <div class="auth-brand-logo" aria-hidden="true"><img src="/images/univ-learning-logo.svg?v=1" alt="" class="brand-logo-img"></div>
                     <h1 class="display-5 fw-bold mb-3"><?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></h1>
                     <p class="lead fw-normal text-white-50">Access your courses, quizzes, results, and learning tools in one place.</p>
                 </div>

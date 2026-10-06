@@ -5,7 +5,10 @@ $user_type = $_SESSION['user_type'] ?? 'Student';
 <!-- Sidebar -->
 <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
     <div class="sidebar-heading border-bottom p-4 fs-4 fw-bold text-center text-primary">
-        Univ<span class="text-white">Learning</span>
+        <span class="sidebar-logo-mark me-2" aria-hidden="true">
+            <img src="/images/univ-learning-logo.svg?v=1" alt="" class="brand-logo-img">
+        </span>
+        <span class="sidebar-brand-text">Univ<span class="text-white">Learning</span></span>
     </div>
     <div class="list-group list-group-flush p-3">
         <a href="?page=dashboard" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo (in_array($_GET['page'] ?? 'dashboard', ['dashboard', 'instructor-dashboard', 'admin-dashboard'])) ? 'active bg-primary' : ''; ?>">
