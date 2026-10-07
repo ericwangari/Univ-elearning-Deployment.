@@ -6,7 +6,7 @@ $user_type = $_SESSION['user_type'] ?? 'Student';
 <div class="bg-dark text-white border-end" id="sidebar-wrapper" style="min-width: 250px; min-height: 100vh;">
     <div class="sidebar-heading border-bottom p-4 fs-4 fw-bold text-center text-primary">
         <span class="sidebar-logo-mark me-2" aria-hidden="true">
-            <img src="/images/univ-learning-logo.svg?v=1" alt="" class="brand-logo-img">
+            <img src="/images/univ-learning-logo.svg?v=2" alt="" class="brand-logo-img">
         </span>
         <span class="sidebar-brand-text">Univ<span class="text-white">Learning</span></span>
     </div>

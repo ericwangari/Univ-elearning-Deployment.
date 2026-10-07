@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?php echo defined('APP_NAME') ? APP_NAME : 'Univ E-Learning'; ?></title>
-    <link rel="icon" type="image/svg+xml" href="/images/univ-learning-logo.svg?v=1">
-    <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="/images/univ-learning-logo.svg?v=2">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192.png?v=2">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Fonts -->
@@ -17,12 +17,12 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/style.css?v=14">
     <!-- PWA Support -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json?v=2">
     <meta name="theme-color" content="#c5a059">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
+                navigator.serviceWorker.register('/sw.js?v=2');
             });
         }
     </script>
