@@ -14,7 +14,7 @@ class AiTeacherController {
 
         $courses = $this->getRelevantCourses();
         $selectedCourseId = $_POST['course_id'] ?? ($_GET['course_id'] ?? '');
-        $mode = $_POST['mode'] ?? ($_GET['mode'] ?? 'explain');
+        $mode = $_POST['mode'] ?? 'explain';
         $question = trim($_POST['question'] ?? '');
         $ai_response = null;
         $error = null;
@@ -132,28 +132,6 @@ class AiTeacherController {
                 . "3. List two common mistakes learners make with {$topic}.\n"
                 . "4. Solve a small scenario: choose a problem from {$courseName} and explain how {$topic} helps solve it.\n"
                 . "5. Reflection: what part of {$topic} still feels unclear?";
-        }
-
-        if ($mode === 'flashcards') {
-            return "Flashcards for {$topic}\n\n"
-                . "1. Front: What is the core idea of {$topic}?\n"
-                . "   Back: Explain it in one sentence, then add one practical example.\n\n"
-                . "2. Front: When should you use {$topic}?\n"
-                . "   Back: Use it when it helps solve a specific problem in {$courseName}.\n\n"
-                . "3. Front: What is a common mistake with {$topic}?\n"
-                . "   Back: Memorizing the definition without practicing an example.\n\n"
-                . "4. Front: How do you know you understand {$topic}?\n"
-                . "   Back: You can teach it, apply it, and spot where it does not apply.";
-        }
-
-        if ($mode === 'coach') {
-            return "Premium coaching plan for {$courseName}\n\n"
-                . "Focus topic: {$topic}\n\n"
-                . "1. Learn: Read the course lesson and write a five-line summary.\n"
-                . "2. Practice: Answer three questions without notes, then check your mistakes.\n"
-                . "3. Apply: Build one small example or scenario using {$topic}.\n"
-                . "4. Review: Turn every mistake into a flashcard.\n"
-                . "5. Finish: Take the next quiz when you can explain the topic out loud.";
         }
 
         if ($mode === 'content') {

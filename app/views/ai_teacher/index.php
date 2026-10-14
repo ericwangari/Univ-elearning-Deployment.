@@ -7,9 +7,9 @@ include __DIR__ . '/../partials/sidebar_v2.php';
 <div class="container-fluid p-4">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
         <div>
-            <span class="badge bg-soft-primary text-primary mb-2"><i class="bi bi-gem me-1"></i>Premium Learning Assistant</span>
+            <span class="badge bg-soft-primary text-primary mb-2">AI Learning Assistant</span>
             <h1 class="fw-bold mb-1">AI Teacher</h1>
-            <p class="text-muted mb-0">Generate explanations, study plans, mini-lessons, flashcards, practice questions, and coaching plans for your courses.</p>
+            <p class="text-muted mb-0">Generate explanations, study plans, mini-lessons, and practice questions for your courses.</p>
         </div>
         <div class="ai-teacher-orb mt-3 mt-lg-0" aria-hidden="true">
             <i class="bi bi-stars"></i>
@@ -39,15 +39,7 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                             <option value="plan" <?php echo $mode === 'plan' ? 'selected' : ''; ?>>Study plan</option>
                             <option value="content" <?php echo $mode === 'content' ? 'selected' : ''; ?>>Mini-lesson content</option>
                             <option value="practice" <?php echo $mode === 'practice' ? 'selected' : ''; ?>>Practice questions</option>
-                            <option value="flashcards" <?php echo $mode === 'flashcards' ? 'selected' : ''; ?>>Flashcards</option>
-                            <option value="coach" <?php echo $mode === 'coach' ? 'selected' : ''; ?>>Premium coaching plan</option>
                         </select>
-                    </div>
-
-                    <div class="premium-prompt-grid mb-3">
-                        <button type="button" class="premium-prompt-chip" data-prompt="Create a 5-day revision plan for my next assessment.">5-day revision</button>
-                        <button type="button" class="premium-prompt-chip" data-prompt="Explain the hardest concept in this course with an example.">Explain simply</button>
-                        <button type="button" class="premium-prompt-chip" data-prompt="Generate practice questions and answers for this topic.">Practice set</button>
                     </div>
 
                     <div class="mb-4">
@@ -82,26 +74,12 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                     <div class="text-center py-5 text-muted">
                         <i class="bi bi-robot display-4 text-primary"></i>
                         <h5 class="fw-bold mt-3">Ask for help with any topic</h5>
-                        <p class="mb-0">The AI teacher can explain ideas, generate mini-lessons, create practice questions, flashcards, and build study plans.</p>
+                        <p class="mb-0">The AI teacher can explain ideas, generate mini-lessons, create practice questions, and build study plans.</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const promptButtons = document.querySelectorAll('.premium-prompt-chip');
-    const questionBox = document.getElementById('aiQuestion');
-
-    promptButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
-            questionBox.value = button.dataset.prompt || '';
-            questionBox.focus();
-        });
-    });
-});
-</script>
 
 <?php include __DIR__ . '/../partials/footer.php'; ?>

@@ -12,7 +12,6 @@ require_once __DIR__ . '/../app/controllers/FeedbackController.php';
 require_once __DIR__ . '/../app/controllers/SupportController.php';
 require_once __DIR__ . '/../app/controllers/AiTeacherController.php';
 require_once __DIR__ . '/../app/controllers/AccountController.php';
-require_once __DIR__ . '/../app/helpers/premium_features.php';
 
 $page = $_GET['page'] ?? 'login';
 
