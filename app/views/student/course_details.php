@@ -2,6 +2,10 @@
 // app/views/student/course_details.php
 include __DIR__ . '/../partials/header.php';
 include __DIR__ . '/../partials/sidebar_v2.php';
+
+$premiumMeta = premiumCourseMeta($course);
+$lessonCount = count($contents ?? []);
+$quizCount = count($quizzes ?? []);
 ?>
 
 <div class="container-fluid p-4">
@@ -13,7 +17,10 @@ include __DIR__ . '/../partials/sidebar_v2.php';
     <div class="hero-banner mb-5 animate__animated animate__fadeIn">
         <div class="d-flex justify-content-between align-items-center position-relative" style="z-index: 1;">
             <div>
-                <span class="badge bg-soft-primary px-3 py-2 mb-3" style="font-size: 0.9rem;">Course Profile</span>
+                <span class="badge bg-soft-primary px-3 py-2 mb-3" style="font-size: 0.9rem;">
+                    <i class="bi <?php echo htmlspecialchars($premiumMeta['icon']); ?> me-1"></i>
+                    <?php echo htmlspecialchars($premiumMeta['label']); ?>
+                </span>
                 <h1 class="display-4 fw-bold mb-3"><?php echo htmlspecialchars($course['CourseName']); ?></h1>
                 <p class="lead mb-0 text-white-50">
                     <i class="bi bi-people me-2"></i> <?php echo $course['StudentCount']; ?> Students Enrolled
@@ -35,6 +42,34 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 <p class="text-muted" style="line-height: 1.8; font-size: 1.1rem;">
                     <?php echo nl2br(htmlspecialchars($course['Description'])); ?>
                 </p>
+                <div class="premium-detail-grid mt-4">
+                    <div>
+                        <i class="bi bi-compass text-primary"></i>
+                        <strong><?php echo htmlspecialchars($premiumMeta['level']); ?></strong>
+                        <span>Learning level</span>
+                    </div>
+                    <div>
+                        <i class="bi bi-calendar4-week text-success"></i>
+                        <strong><?php echo htmlspecialchars($premiumMeta['duration']); ?></strong>
+                        <span>Suggested pace</span>
+                    </div>
+                    <div>
+                        <i class="bi bi-award text-warning"></i>
+                        <strong>Certificate ready</strong>
+                        <span>Complete assessments</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="premium-coach-card mb-4">
+                <div>
+                    <span class="premium-eyebrow text-primary"><i class="bi bi-stars me-2"></i>Premium Coach</span>
+                    <h4 class="fw-bold mb-2">Turn this course into a personal study plan</h4>
+                    <p class="text-muted mb-0">Use the AI Teacher to generate explanations, practice questions, flashcards, and revision plans based on this course.</p>
+                </div>
+                <a href="?page=ai-teacher&course_id=<?php echo urlencode((string)$course['CourseID']); ?>&mode=plan" class="btn btn-primary">
+                    <i class="bi bi-magic me-2"></i>Build Plan
+                </a>
             </div>
 
             <?php if (!empty($contents)): ?>
@@ -135,7 +170,18 @@ include __DIR__ . '/../partials/sidebar_v2.php';
         <div class="col-lg-4 animate__animated animate__fadeInRight animate__delay-1s">
             <div class="card p-4 sticky-top border-0 shadow-sm" style="top: 20px;">
                 <div class="text-center mb-4">
-                    <span class="badge bg-success mb-3">Free Course</span>
+                    <span class="badge premium-access-badge mb-3"><i class="bi bi-gem me-1"></i>Premium Access Included</span>
+                </div>
+
+                <div class="premium-sidebar-summary mb-4">
+                    <div>
+                        <strong><?php echo $lessonCount; ?></strong>
+                        <span>Lessons</span>
+                    </div>
+                    <div>
+                        <strong><?php echo $quizCount; ?></strong>
+                        <span>Assessments</span>
+                    </div>
                 </div>
                 
                 <?php if ($is_enrolled): ?>
@@ -161,8 +207,9 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                     <li class="mb-3 d-flex align-items-center"><i class="bi bi-play-btn-fill text-primary me-3 fs-5"></i> <span>On-demand video</span></li>
                     <li class="mb-3 d-flex align-items-center"><i class="bi bi-file-earmark-text-fill text-danger me-3 fs-5"></i> <span>Downloadable resources</span></li>
                     <li class="mb-3 d-flex align-items-center"><i class="bi bi-patch-question-fill text-success me-3 fs-5"></i> <span>Interactive quizzes</span></li>
-                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-infinity text-info me-3 fs-5"></i> <span>Lifetime access</span></li>
-                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-phone-fill text-secondary me-3 fs-5"></i> <span>Access on mobile and TV</span></li>
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-stars text-info me-3 fs-5"></i> <span>AI study coach</span></li>
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-award-fill text-warning me-3 fs-5"></i> <span>Certificate readiness</span></li>
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-phone-fill text-secondary me-3 fs-5"></i> <span>Mobile-friendly access</span></li>
                 </ul>
             </div>
         </div>

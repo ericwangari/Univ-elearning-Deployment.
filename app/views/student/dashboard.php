@@ -13,7 +13,45 @@ foreach ($enrolled_courses as $course) {
 
 // Average score is provided by the controller
 $average_score = $average_score ?? 0;
+$active_course = $enrolled_courses[0] ?? null;
+$active_meta = $active_course ? premiumCourseMeta($active_course) : null;
+$overall_progress = !empty($enrolled_courses)
+    ? (int) round(array_sum(array_map(fn($course) => (int)($course['Progress'] ?? 0), $enrolled_courses)) / count($enrolled_courses))
+    : 0;
 ?>
+
+<div class="premium-hero mb-4">
+    <div class="premium-hero-content">
+        <span class="premium-eyebrow"><i class="bi bi-gem me-2"></i>Premium Learning Suite</span>
+        <h1 class="premium-title">Your guided learning workspace</h1>
+        <p class="premium-copy">
+            Follow a focused path, get AI study support, track progress, and prepare each course for certificate-level completion.
+        </p>
+        <div class="premium-actions">
+            <a href="?page=ai-teacher<?php echo $active_course ? '&course_id=' . urlencode((string)$active_course['CourseID']) : ''; ?>" class="btn btn-light">
+                <i class="bi bi-stars me-2"></i>Ask AI Teacher
+            </a>
+            <a href="?page=my-enrollments" class="btn btn-outline-light">
+                <i class="bi bi-compass me-2"></i>View Learning Plan
+            </a>
+        </div>
+    </div>
+    <div class="premium-hero-panel">
+        <div class="premium-panel-label">Overall Progress</div>
+        <div class="premium-progress-ring" style="--progress: <?php echo min(100, max(0, $overall_progress)); ?>%;">
+            <span><?php echo $overall_progress; ?>%</span>
+        </div>
+        <div class="premium-panel-course">
+            <?php if ($active_course): ?>
+                <strong><?php echo htmlspecialchars($active_course['CourseName']); ?></strong>
+                <small><?php echo htmlspecialchars(premiumNextMilestone($active_course)); ?></small>
+            <?php else: ?>
+                <strong>Start a course</strong>
+                <small>Enroll to unlock your first learning path.</small>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
 <div class="row g-4 mb-4">
     <div class="col-md-4">
@@ -85,13 +123,17 @@ $average_score = $average_score ?? 0;
                         <tbody>
                             <?php if (!empty($enrolled_courses)): ?>
                                 <?php foreach (array_slice($enrolled_courses, 0, 5) as $course): ?>
+                                    <?php $meta = premiumCourseMeta($course); ?>
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="p-2 bg-light rounded me-2">
-                                                    <i class="bi bi-book text-primary"></i>
+                                                    <i class="bi <?php echo htmlspecialchars($meta['icon']); ?> text-primary"></i>
                                                 </div>
-                                                <span><?php echo htmlspecialchars($course['CourseName']); ?></span>
+                                                <div>
+                                                    <span class="fw-semibold"><?php echo htmlspecialchars($course['CourseName']); ?></span>
+                                                    <div class="small text-muted"><?php echo htmlspecialchars($meta['label']); ?></div>
+                                                </div>
                                             </div>
                                         </td>
                                         <td style="width: 200px;">
@@ -107,6 +149,7 @@ $average_score = $average_score ?? 0;
                                             $badge_text = ($course['CompletionStatus'] === 'Completed') ? 'Completed' : 'In Progress';
                                             ?>
                                             <span class="badge <?php echo $badge_class; ?> px-2 py-1"><?php echo $badge_text; ?></span>
+                                            <div class="small text-muted mt-1"><?php echo premiumCompletionLabel($progress); ?></div>
                                         </td>
                                         <td>
                                             <a href="?page=course-details&id=<?php echo $course['CourseID']; ?>" class="btn btn-sm btn-light">View</a>

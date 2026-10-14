@@ -46,6 +46,15 @@ $sort = $_GET['sort'] ?? 'new';
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="p-3 premium-stat-tile d-flex align-items-center">
+                <div class="p-2 bg-white rounded-3 me-3"><i class="bi bi-gem text-warning fs-5"></i></div>
+                <div>
+                    <h6 class="mb-0 fw-bold">Premium Paths</h6>
+                    <small>Certificates, AI help, mentor-style guidance</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Courses Grid -->
@@ -53,14 +62,18 @@ $sort = $_GET['sort'] ?? 'new';
         <?php if (!empty($courses)): ?>
             <?php foreach ($courses as $course): ?>
                 <?php $isEnrolled = !empty($course['IsEnrolled'] ?? $course['isenrolled'] ?? false); ?>
+                <?php $meta = premiumCourseMeta($course); ?>
                 <div class="col-md-6 col-lg-4 col-xl-3 animate__animated animate__fadeInUp course-card-container">
-                    <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
+                    <div class="card h-100 border-0 shadow-sm course-card premium-course-card overflow-hidden">
                         <div class="position-relative">
                             <img src="/images/books-cartoon.svg?v=4" class="card-img-top bg-light" alt="Course" style="height: 160px; object-fit: contain; padding: 1rem;">
+                            <span class="premium-ribbon"><i class="bi bi-gem me-1"></i><?php echo htmlspecialchars($meta['label']); ?></span>
                         </div>
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge bg-soft-primary text-primary px-2 py-1 mb-2" style="font-size: 0.7rem;">TOP RATED</span>
+                                <span class="badge bg-soft-primary text-primary px-2 py-1 mb-2" style="font-size: 0.7rem;">
+                                    <i class="bi <?php echo htmlspecialchars($meta['icon']); ?> me-1"></i><?php echo htmlspecialchars($meta['level']); ?>
+                                </span>
                                 <div class="d-flex align-items-center small text-muted">
                                     <i class="bi bi-people me-1"></i> <?php echo $course['StudentCount']; ?>
                                 </div>
@@ -73,6 +86,12 @@ $sort = $_GET['sort'] ?? 'new';
                             <p class="card-text text-muted small mb-4 line-clamp-2">
                                 <?php echo htmlspecialchars(substr($course['Description'], 0, 100)); ?>...
                             </p>
+
+                            <div class="premium-skill-list mb-3">
+                                <?php foreach ($meta['skills'] as $skill): ?>
+                                    <span><?php echo htmlspecialchars($skill); ?></span>
+                                <?php endforeach; ?>
+                            </div>
                             
                             <div class="d-flex justify-content-between align-items-center mt-auto">
                                 <div class="d-flex align-items-center small text-warning">
@@ -83,6 +102,7 @@ $sort = $_GET['sort'] ?? 'new';
                                     <i class="bi bi-star-half me-1"></i>
                                     <span class="text-muted ms-1">(4.8)</span>
                                 </div>
+                                <span class="small text-muted"><i class="bi bi-clock me-1"></i><?php echo htmlspecialchars($meta['duration']); ?></span>
                             </div>
                         </div>
                         <div class="card-footer bg-white border-0 p-4 pt-0">
