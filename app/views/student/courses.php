@@ -3,273 +3,156 @@
 include __DIR__ . '/../partials/header.php';
 include __DIR__ . '/../partials/sidebar_v2.php';
 
-$search     = $filters['search'] ?? '';
-$department = $filters['department'] ?? '';
-$sort       = $filters['sort'] ?? 'new';
-$status     = $filters['status'] ?? 'all';
-$view       = $filters['view'] ?? 'grid';
-$isStudent  = ($_SESSION['user_type'] ?? '') === 'Student';
-
-$h = function ($value) {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-};
-
-// Build a catalog URL that keeps current filters, with overrides.
-$catalogUrl = function (array $overrides = []) use ($filters) {
-    $params = array_merge($filters, $overrides);
-    $params = array_filter($params, function ($v, $k) {
-        $defaults = ['search' => '', 'department' => '', 'sort' => 'new', 'status' => 'all', 'view' => 'grid'];
-        return $v !== '' && $v !== null && (!isset($defaults[$k]) || $defaults[$k] !== $v);
-    }, ARRAY_FILTER_USE_BOTH);
-    return 'index.php?' . http_build_query(array_merge(['page' => 'courses'], $params));
-};
-
-$departmentIcons = [
-    'Computer Science'       => 'bi-cpu',
-    'Information Technology' => 'bi-hdd-network',
-    'Data Science & AI'      => 'bi-graph-up-arrow',
-    'Software Engineering'   => 'bi-code-slash',
-    'Design & Media'         => 'bi-palette',
-    'Business'               => 'bi-briefcase',
-];
-$departmentGradients = [
-    'Computer Science'       => 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-    'Information Technology' => 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-    'Data Science & AI'      => 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
-    'Software Engineering'   => 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-    'Design & Media'         => 'linear-gradient(135deg, #db2777 0%, #be185d 100%)',
-    'Business'               => 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-];
-
-$deptIcon = function ($name) use ($departmentIcons) {
-    return $departmentIcons[$name] ?? 'bi-mortarboard';
-};
-$deptGradient = function ($name) use ($departmentGradients) {
-    return $departmentGradients[$name] ?? 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)';
-};
-$deptSlug = function ($name) {
-    return 'dept-' . trim(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name)), '-');
-};
-
-$sortLabels = [
-    'new' => 'Newest first', 'popular' => 'Most popular', 'az' => 'Name A–Z',
-    'za' => 'Name Z–A', 'department' => 'Department',
-];
-$statusLabels = ['all' => 'All courses', 'enrolled' => 'My courses', 'available' => 'Not enrolled'];
-
-$hasActiveFilters = $search !== '' || $department !== '' || $status !== 'all';
-
-$renderCourseCard = function ($course) use ($h, $deptIcon, $deptGradient, $deptSlug, $isStudent) {
-    $isEnrolled = !empty($course['IsEnrolled'] ?? false);
-    $desc = trim((string)($course['Description'] ?? ''));
-    $shortDesc = strlen($desc) > 110 ? substr($desc, 0, 107) . '…' : $desc;
-    $dept = $course['Department'];
-    $bannerBg = $deptGradient($dept);
-    ?>
-    <div class="col-md-6 col-lg-4 col-xl-3 course-card-container">
-        <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
-            <div class="course-card-banner <?php echo $h($deptSlug($dept)); ?>" style="height: 120px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 2.75rem; color: #ffffff; background: <?php echo $bannerBg; ?>;">
-                <i class="bi <?php echo $h($deptIcon($dept)); ?>" aria-hidden="true"></i>
-                <?php if ($isEnrolled): ?>
-                    <span class="badge course-enrolled-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(16, 185, 129, 0.95); color: #fff; font-size: 0.72rem; padding: 0.35rem 0.6rem; border-radius: 9999px;">
-                        <i class="bi bi-check2-circle me-1"></i>Enrolled
-                    </span>
-                <?php endif; ?>
-            </div>
-            <div class="card-body p-4 d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
-                    <a href="?page=courses&department=<?php echo urlencode($dept); ?>" class="badge course-dept-badge text-decoration-none" style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.72rem; padding: 0.35rem 0.6rem; border-radius: 6px;">
-                        <?php echo $h($dept); ?>
-                    </a>
-                    <span class="small text-muted text-nowrap" title="Enrolled students">
-                        <i class="bi bi-people me-1"></i><?php echo (int)($course['StudentCount'] ?? 0); ?>
-                    </span>
-                </div>
-                <h5 class="card-title fw-bold mb-2"><?php echo $h($course['CourseName']); ?></h5>
-                <div class="d-flex align-items-center small text-muted mb-2">
-                    <i class="bi bi-person-video3 me-2 text-primary"></i>
-                    <span><?php echo $h(($course['InstructorNames'] ?? '') ?: 'Instructor not assigned yet'); ?></span>
-                </div>
-                <p class="card-text text-muted small mb-0"><?php echo $h($shortDesc); ?></p>
-            </div>
-            <div class="card-footer bg-white border-0 p-4 pt-0">
-                <?php if ($isEnrolled): ?>
-                    <div class="d-flex gap-2">
-                        <a href="?page=course-details&id=<?php echo (int)$course['CourseID']; ?>" class="btn btn-soft-primary flex-grow-1 fw-bold">
-                            <i class="bi bi-play-circle me-1"></i> Continue
-                        </a>
-                        <a href="?page=ai-teacher&course_id=<?php echo (int)$course['CourseID']; ?>" class="btn btn-light border" title="Ask the AI Teacher about this course">
-                            <i class="bi bi-stars"></i>
-                        </a>
-                    </div>
-                <?php else: ?>
-                    <div class="d-flex gap-2">
-                        <a href="?page=course-details&id=<?php echo (int)$course['CourseID']; ?>" class="btn btn-light border flex-grow-1 fw-bold">Details</a>
-                        <?php if ($isStudent): ?>
-                            <form action="?page=enroll" method="POST" class="flex-grow-1">
-                                <input type="hidden" name="course_id" value="<?php echo (int)$course['CourseID']; ?>">
-                                <input type="hidden" name="redirect" value="course-details">
-                                <button type="submit" class="btn btn-primary w-100 fw-bold">Enroll</button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <?php
-};
+$search     = $filters['search'] ?? ($_GET['search'] ?? '');
+$department = $filters['department'] ?? ($_GET['department'] ?? '');
+$sort       = $filters['sort'] ?? ($_GET['sort'] ?? 'new');
 ?>
 
-<div class="container-fluid p-4 course-catalog">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-3">
+<div class="container-fluid p-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 animate__animated animate__fadeIn">
         <div>
             <h1 class="fw-bold mb-1">Course Catalog</h1>
-            <p class="text-muted mb-0">
-                <?php echo (int)$total_course_count . ' ' . ($total_course_count === 1 ? 'course' : 'courses'); ?> across <?php echo count($departmentCounts) . ' ' . (count($departmentCounts) === 1 ? 'department' : 'departments'); ?> ·
-                <?php echo (int)$student_count . ' ' . ($student_count === 1 ? 'active student' : 'active students'); ?>
-            </p>
+            <p class="text-muted">Explore our collection of world-class learning content.</p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0 flex-wrap">
+            <div class="input-group search-bar" style="max-width: 280px;">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="courseSearch" class="form-control border-start-0 ps-0 shadow-none" placeholder="Search courses..." value="<?php echo htmlspecialchars($search); ?>">
+            </div>
+            <select id="courseDepartment" class="form-select shadow-none" style="width: auto;">
+                <option value="">All Departments</option>
+                <?php if (!empty($departmentCounts)): ?>
+                    <?php foreach ($departmentCounts as $deptName => $cnt): ?>
+                        <option value="<?php echo htmlspecialchars($deptName); ?>" <?php echo $department === $deptName ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($deptName); ?> (<?php echo (int)$cnt; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+            <select id="courseSort" class="form-select shadow-none" style="width: auto;">
+                <option value="new" <?php echo $sort === 'new' ? 'selected' : ''; ?>>Newest First</option>
+                <option value="popular" <?php echo $sort === 'popular' ? 'selected' : ''; ?>>Most Popular</option>
+                <option value="department" <?php echo $sort === 'department' ? 'selected' : ''; ?>>By Department</option>
+                <option value="az" <?php echo $sort === 'az' ? 'selected' : ''; ?>>Name A–Z</option>
+            </select>
         </div>
     </div>
 
-    <!-- Filter bar -->
-    <form id="catalogFilters" method="GET" action="index.php" class="card border-0 shadow-sm p-3 mb-3 catalog-filter-bar" role="search">
-        <input type="hidden" name="page" value="courses">
-        <input type="hidden" name="department" value="<?php echo $h($department); ?>">
-        <input type="hidden" name="view" value="<?php echo $h($view); ?>">
-        <div class="row g-2 align-items-center">
-            <div class="col-lg-5">
-                <label for="courseSearch" class="visually-hidden">Search courses</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="search" id="courseSearch" name="search" class="form-control border-start-0 ps-0 shadow-none"
-                           placeholder="Search by course, topic or instructor…" value="<?php echo $h($search); ?>" autocomplete="off">
-                </div>
-            </div>
-            <div class="col-sm-4 col-lg-2">
-                <label for="courseStatus" class="visually-hidden">Enrollment status</label>
-                <select id="courseStatus" name="status" class="form-select shadow-none js-auto-submit">
-                    <?php foreach ($statusLabels as $value => $label): ?>
-                        <option value="<?php echo $value; ?>" <?php echo $status === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-sm-4 col-lg-3">
-                <label for="courseSort" class="visually-hidden">Sort by</label>
-                <select id="courseSort" name="sort" class="form-select shadow-none js-auto-submit">
-                    <?php foreach ($sortLabels as $value => $label): ?>
-                        <option value="<?php echo $value; ?>" <?php echo $sort === $value ? 'selected' : ''; ?>>Sort: <?php echo $label; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-sm-4 col-lg-2">
-                <div class="btn-group w-100" role="group" aria-label="Layout">
-                    <a href="<?php echo $h($catalogUrl(['view' => 'grid'])); ?>" class="btn <?php echo $view === 'grid' ? 'btn-primary' : 'btn-light border'; ?>" title="Grid view">
-                        <i class="bi bi-grid-3x3-gap"></i>
-                    </a>
-                    <a href="<?php echo $h($catalogUrl(['view' => 'grouped'])); ?>" class="btn <?php echo $view === 'grouped' ? 'btn-primary' : 'btn-light border'; ?>" title="Group by department">
-                        <i class="bi bi-collection"></i>
-                    </a>
+    <!-- Stats Preview (Optional/Aesthetic) -->
+    <div class="row g-4 mb-5 animate__animated animate__fadeIn">
+        <div class="col-md-3">
+            <div class="p-3 bg-soft-primary rounded-4 border-0 d-flex align-items-center">
+                <div class="p-2 bg-white rounded-3 me-3"><i class="bi bi-book text-primary fs-5"></i></div>
+                <div>
+                    <h6 class="mb-0 fw-bold"><?php echo count($courses); ?></h6>
+                    <small class="text-muted">Courses</small>
                 </div>
             </div>
         </div>
-    </form>
-
-    <!-- Department chips (styled with Bootstrap pill fallbacks) -->
-    <nav class="dept-chip-row d-flex flex-wrap gap-2 mb-3 pb-1" aria-label="Filter by department">
-        <a href="<?php echo $h($catalogUrl(['department' => ''])); ?>"
-           class="btn btn-sm rounded-pill dept-chip d-inline-flex align-items-center gap-2 px-3 py-2 <?php echo $department === '' ? 'btn-primary active' : 'btn-light border text-dark'; ?>">
-            <i class="bi bi-grid"></i> All
-            <span class="badge rounded-pill bg-white text-dark ms-1"><?php echo (int)$total_course_count; ?></span>
-        </a>
-        <?php foreach ($departmentCounts as $name => $count): ?>
-            <a href="<?php echo $h($catalogUrl(['department' => $name])); ?>"
-               class="btn btn-sm rounded-pill dept-chip d-inline-flex align-items-center gap-2 px-3 py-2 <?php echo $department === $name ? 'btn-primary active' : 'btn-light border text-dark'; ?>">
-                <i class="bi <?php echo $h($deptIcon($name)); ?>"></i> <?php echo $h($name); ?>
-                <span class="badge rounded-pill <?php echo $department === $name ? 'bg-white text-dark' : 'bg-secondary text-white'; ?> ms-1"><?php echo (int)$count; ?></span>
-            </a>
-        <?php endforeach; ?>
-    </nav>
-
-    <!-- Active filters -->
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-4 small">
-        <span class="text-muted"><?php echo count($courses); ?> result<?php echo count($courses) === 1 ? '' : 's'; ?></span>
-        <?php if ($search !== ''): ?>
-            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['search' => ''])); ?>">“<?php echo $h($search); ?>” <i class="bi bi-x"></i></a>
-        <?php endif; ?>
-        <?php if ($department !== ''): ?>
-            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['department' => ''])); ?>"><?php echo $h($department); ?> <i class="bi bi-x"></i></a>
-        <?php endif; ?>
-        <?php if ($status !== 'all'): ?>
-            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['status' => 'all'])); ?>"><?php echo $h($statusLabels[$status]); ?> <i class="bi bi-x"></i></a>
-        <?php endif; ?>
-        <?php if ($hasActiveFilters): ?>
-            <a class="ms-1 fw-semibold text-primary" href="index.php?page=courses">Clear all</a>
-        <?php endif; ?>
+        <div class="col-md-3">
+            <div class="p-3 bg-soft-success rounded-4 border-0 d-flex align-items-center">
+                <div class="p-2 bg-white rounded-3 me-3"><i class="bi bi-people text-success fs-5"></i></div>
+                <div>
+                    <h6 class="mb-0 fw-bold"><?php echo $student_count; ?></h6>
+                    <small class="text-muted">Students</small>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Results -->
-    <?php if (empty($courses)): ?>
-        <div class="text-center py-5">
-            <img src="/images/books-cartoon.svg?v=4" alt="" style="height: 180px; object-fit: contain;" class="mb-4">
-            <h4 class="text-muted">No courses match these filters.</h4>
-            <a href="index.php?page=courses" class="btn btn-primary mt-3">Reset filters</a>
-        </div>
-    <?php elseif ($view === 'grouped'): ?>
-        <?php foreach ($coursesByDepartment as $deptName => $deptCourses): ?>
-            <section class="mb-5" aria-labelledby="<?php echo $h($deptSlug($deptName)); ?>-heading">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h2 class="h5 fw-bold mb-0 d-flex align-items-center gap-2" id="<?php echo $h($deptSlug($deptName)); ?>-heading">
-                        <span class="dept-heading-icon <?php echo $h($deptSlug($deptName)); ?>"><i class="bi <?php echo $h($deptIcon($deptName)); ?>"></i></span>
-                        <?php echo $h($deptName); ?>
-                        <span class="text-muted fw-normal small">(<?php echo count($deptCourses); ?>)</span>
-                    </h2>
-                    <?php if ($department === ''): ?>
-                        <a href="<?php echo $h($catalogUrl(['department' => $deptName, 'view' => 'grid'])); ?>" class="small fw-semibold">View only this department →</a>
-                    <?php endif; ?>
+    <!-- Courses Grid -->
+    <div class="row g-4" id="coursesGrid">
+        <?php if (!empty($courses)): ?>
+            <?php foreach ($courses as $course): ?>
+                <?php $isEnrolled = !empty($course['IsEnrolled'] ?? $course['isenrolled'] ?? false); ?>
+                <div class="col-md-6 col-lg-4 col-xl-3 animate__animated animate__fadeInUp course-card-container">
+                    <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
+                        <div class="position-relative">
+                            <img src="/images/books-cartoon.svg?v=4" class="card-img-top bg-light" alt="Course" style="height: 160px; object-fit: contain; padding: 1rem;">
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-soft-primary text-primary px-2 py-1 mb-2" style="font-size: 0.7rem;">
+                                    <?php echo htmlspecialchars($course['Department'] ?: 'TOP RATED'); ?>
+                                </span>
+                                <div class="d-flex align-items-center small text-muted">
+                                    <i class="bi bi-people me-1"></i> <?php echo $course['StudentCount']; ?>
+                                </div>
+                            </div>
+                            <h5 class="card-title fw-bold mb-2"><?php echo htmlspecialchars($course['CourseName']); ?></h5>
+                            <div class="d-flex align-items-center small text-muted mb-2">
+                                <i class="bi bi-person-video3 me-2 text-primary"></i>
+                                <span>Instructor: <?php echo htmlspecialchars($course['InstructorNames'] ?: 'Not assigned yet'); ?></span>
+                            </div>
+                            <p class="card-text text-muted small mb-4 line-clamp-2">
+                                <?php echo htmlspecialchars(substr($course['Description'] ?? '', 0, 100)); ?>...
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <div class="d-flex align-items-center small text-warning">
+                                    <i class="bi bi-star-fill me-1"></i>
+                                    <i class="bi bi-star-fill me-1"></i>
+                                    <i class="bi bi-star-fill me-1"></i>
+                                    <i class="bi bi-star-fill me-1"></i>
+                                    <i class="bi bi-star-half me-1"></i>
+                                    <span class="text-muted ms-1">(4.8)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-4 pt-0">
+                            <?php if ($isEnrolled): ?>
+                                <a href="?page=course-details&id=<?php echo $course['CourseID']; ?>" class="btn btn-soft-primary w-100 fw-bold">
+                                    <i class="bi bi-play-circle me-2"></i> Continue Learning
+                                </a>
+                            <?php else: ?>
+                                <div class="d-flex gap-2">
+                                    <a href="?page=course-details&id=<?php echo $course['CourseID']; ?>" class="btn btn-light border flex-grow-1 fw-bold">Details</a>
+                                    <form action="?page=enroll" method="POST" class="flex-grow-1">
+                                        <input type="hidden" name="course_id" value="<?php echo $course['CourseID']; ?>">
+                                        <input type="hidden" name="redirect" value="course-details">
+                                        <button type="submit" class="btn btn-primary w-100 fw-bold">Enroll</button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
-                <div class="row g-4">
-                    <?php foreach ($deptCourses as $course) $renderCourseCard($course); ?>
-                </div>
-            </section>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <div class="row g-4" id="coursesGrid">
-            <?php foreach ($courses as $course) $renderCourseCard($course); ?>
-        </div>
-    <?php endif; ?>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="col-12 text-center py-5">
+                <img src="/images/books-cartoon.svg?v=4" alt="No courses" style="height: 200px; object-fit: contain;" class="mb-4">
+                <h4 class="text-muted">No courses found matching your criteria.</h4>
+                <a href="?page=courses" class="btn btn-primary mt-3">Reset Filters</a>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('catalogFilters');
-    const search = document.getElementById('courseSearch');
-    let timer = null;
-    let lastValue = search.value;
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('courseSearch');
+    const deptSelect = document.getElementById('courseDepartment');
+    const sortSelect = document.getElementById('courseSort');
 
-    form.querySelectorAll('.js-auto-submit').forEach(function (el) {
-        el.addEventListener('change', function () { form.submit(); });
-    });
-
-    // Debounced live search (submits after typing pauses)
-    search.addEventListener('input', function () {
-        clearTimeout(timer);
-        timer = setTimeout(function () {
-            const value = search.value.trim();
-            if (value !== lastValue.trim() && (value.length === 0 || value.length >= 2)) {
-                lastValue = value;
-                form.submit();
-            }
-        }, 600);
-    });
-
-    // Keep the cursor at the end of the search box after reload
-    if (search.value) {
-        search.focus();
-        const len = search.value.length;
-        search.setSelectionRange(len, len);
+    function applyFilters() {
+        const search = searchInput.value.trim();
+        const dept = deptSelect ? deptSelect.value : '';
+        const sort = sortSelect.value;
+        const params = new URLSearchParams();
+        params.set('page', 'courses');
+        if (search) params.set('search', search);
+        if (dept) params.set('department', dept);
+        if (sort && sort !== 'new') params.set('sort', sort);
+        window.location.href = `index.php?${params.toString()}`;
     }
+
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+
+    if (deptSelect) deptSelect.addEventListener('change', applyFilters);
+    sortSelect.addEventListener('change', applyFilters);
 });
 </script>
 

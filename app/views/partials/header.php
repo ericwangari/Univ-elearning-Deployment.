@@ -20,8 +20,7 @@
     <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css?v=16">
-    <link rel="stylesheet" href="/css/style-enhanced.css?v=16">
+    <link rel="stylesheet" href="/css/style.css?v=14">
     
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json?v=2">

@@ -18,6 +18,149 @@ if (defined('AI_TEACHER_API_KEY') && AI_TEACHER_API_KEY !== '') {
 }
 ?>
 
+<style>
+.ai-teacher-chat-card {
+    height: 720px;
+    max-height: calc(100vh - 180px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+}
+.ai-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+.ai-message {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 85%;
+    animation: fadeIn 0.25s ease-out;
+}
+.ai-message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+.ai-message.assistant {
+    align-self: flex-start;
+}
+.ai-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+.ai-message.assistant .ai-avatar {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+.ai-message.user .ai-avatar {
+    background: #e2e8f0;
+    color: #475569;
+}
+.ai-bubble {
+    padding: 0.85rem 1.15rem;
+    border-radius: 16px;
+    line-height: 1.55;
+    position: relative;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+.ai-message.assistant .ai-bubble {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    border-top-left-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.ai-message.user .ai-bubble {
+    background: var(--primary-color, #4f46e5);
+    color: #ffffff;
+    border-top-right-radius: 4px;
+}
+.ai-bubble p:last-child {
+    margin-bottom: 0;
+}
+.ai-bubble pre {
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 0.75rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+}
+.ai-bubble code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+.ai-message.user .ai-bubble code {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+.ai-typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.5rem 0.85rem;
+}
+.ai-typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+    animation: typingPulse 1.4s infinite ease-in-out;
+}
+.ai-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingPulse {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+.ai-quick-btn {
+    font-size: 0.8rem;
+    border-radius: 9999px;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.ai-quick-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary-color, #4f46e5);
+    border-color: var(--primary-color, #4f46e5);
+}
+.ai-lesson-item {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.15s ease;
+    font-size: 0.88rem;
+}
+.ai-lesson-item:hover {
+    background: #f1f5f9;
+}
+.ai-lesson-item.active {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-weight: 600;
+}
+</style>
+
 <div class="container-fluid p-4">
     <!-- Header -->
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-3">
