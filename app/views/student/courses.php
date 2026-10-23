@@ -32,8 +32,20 @@ $departmentIcons = [
     'Design & Media'         => 'bi-palette',
     'Business'               => 'bi-briefcase',
 ];
+$departmentGradients = [
+    'Computer Science'       => 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+    'Information Technology' => 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    'Data Science & AI'      => 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+    'Software Engineering'   => 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+    'Design & Media'         => 'linear-gradient(135deg, #db2777 0%, #be185d 100%)',
+    'Business'               => 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+];
+
 $deptIcon = function ($name) use ($departmentIcons) {
     return $departmentIcons[$name] ?? 'bi-mortarboard';
+};
+$deptGradient = function ($name) use ($departmentGradients) {
+    return $departmentGradients[$name] ?? 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)';
 };
 $deptSlug = function ($name) {
     return 'dept-' . trim(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name)), '-');
@@ -47,23 +59,26 @@ $statusLabels = ['all' => 'All courses', 'enrolled' => 'My courses', 'available'
 
 $hasActiveFilters = $search !== '' || $department !== '' || $status !== 'all';
 
-$renderCourseCard = function ($course) use ($h, $deptIcon, $deptSlug, $isStudent) {
+$renderCourseCard = function ($course) use ($h, $deptIcon, $deptGradient, $deptSlug, $isStudent) {
     $isEnrolled = !empty($course['IsEnrolled'] ?? false);
     $desc = trim((string)($course['Description'] ?? ''));
     $shortDesc = strlen($desc) > 110 ? substr($desc, 0, 107) . '…' : $desc;
     $dept = $course['Department'];
+    $bannerBg = $deptGradient($dept);
     ?>
     <div class="col-md-6 col-lg-4 col-xl-3 course-card-container">
         <div class="card h-100 border-0 shadow-sm course-card overflow-hidden">
-            <div class="course-card-banner <?php echo $h($deptSlug($dept)); ?>">
+            <div class="course-card-banner <?php echo $h($deptSlug($dept)); ?>" style="height: 120px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 2.75rem; color: #ffffff; background: <?php echo $bannerBg; ?>;">
                 <i class="bi <?php echo $h($deptIcon($dept)); ?>" aria-hidden="true"></i>
                 <?php if ($isEnrolled): ?>
-                    <span class="badge course-enrolled-badge"><i class="bi bi-check2-circle me-1"></i>Enrolled</span>
+                    <span class="badge course-enrolled-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(16, 185, 129, 0.95); color: #fff; font-size: 0.72rem; padding: 0.35rem 0.6rem; border-radius: 9999px;">
+                        <i class="bi bi-check2-circle me-1"></i>Enrolled
+                    </span>
                 <?php endif; ?>
             </div>
             <div class="card-body p-4 d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
-                    <a href="?page=courses&department=<?php echo urlencode($dept); ?>" class="badge course-dept-badge text-decoration-none">
+                    <a href="?page=courses&department=<?php echo urlencode($dept); ?>" class="badge course-dept-badge text-decoration-none" style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.72rem; padding: 0.35rem 0.6rem; border-radius: 6px;">
                         <?php echo $h($dept); ?>
                     </a>
                     <span class="small text-muted text-nowrap" title="Enrolled students">
@@ -112,8 +127,8 @@ $renderCourseCard = function ($course) use ($h, $deptIcon, $deptSlug, $isStudent
         <div>
             <h1 class="fw-bold mb-1">Course Catalog</h1>
             <p class="text-muted mb-0">
-                <?php echo (int)$total_course_count; ?> courses across <?php echo count($departmentCounts); ?> departments ·
-                <?php echo (int)$student_count; ?> active students
+                <?php echo (int)$total_course_count . ' ' . ($total_course_count === 1 ? 'course' : 'courses'); ?> across <?php echo count($departmentCounts) . ' ' . (count($departmentCounts) === 1 ? 'department' : 'departments'); ?> ·
+                <?php echo (int)$student_count . ' ' . ($student_count === 1 ? 'active student' : 'active students'); ?>
             </p>
         </div>
     </div>
@@ -161,15 +176,18 @@ $renderCourseCard = function ($course) use ($h, $deptIcon, $deptSlug, $isStudent
         </div>
     </form>
 
-    <!-- Department chips -->
-    <nav class="dept-chip-row mb-3" aria-label="Filter by department">
-        <a href="<?php echo $h($catalogUrl(['department' => ''])); ?>" class="dept-chip <?php echo $department === '' ? 'active' : ''; ?>">
-            <i class="bi bi-grid"></i> All <span class="dept-chip-count"><?php echo (int)$total_course_count; ?></span>
+    <!-- Department chips (styled with Bootstrap pill fallbacks) -->
+    <nav class="dept-chip-row d-flex flex-wrap gap-2 mb-3 pb-1" aria-label="Filter by department">
+        <a href="<?php echo $h($catalogUrl(['department' => ''])); ?>"
+           class="btn btn-sm rounded-pill dept-chip d-inline-flex align-items-center gap-2 px-3 py-2 <?php echo $department === '' ? 'btn-primary active' : 'btn-light border text-dark'; ?>">
+            <i class="bi bi-grid"></i> All
+            <span class="badge rounded-pill bg-white text-dark ms-1"><?php echo (int)$total_course_count; ?></span>
         </a>
         <?php foreach ($departmentCounts as $name => $count): ?>
-            <a href="<?php echo $h($catalogUrl(['department' => $name])); ?>" class="dept-chip <?php echo $department === $name ? 'active' : ''; ?>">
+            <a href="<?php echo $h($catalogUrl(['department' => $name])); ?>"
+               class="btn btn-sm rounded-pill dept-chip d-inline-flex align-items-center gap-2 px-3 py-2 <?php echo $department === $name ? 'btn-primary active' : 'btn-light border text-dark'; ?>">
                 <i class="bi <?php echo $h($deptIcon($name)); ?>"></i> <?php echo $h($name); ?>
-                <span class="dept-chip-count"><?php echo (int)$count; ?></span>
+                <span class="badge rounded-pill <?php echo $department === $name ? 'bg-white text-dark' : 'bg-secondary text-white'; ?> ms-1"><?php echo (int)$count; ?></span>
             </a>
         <?php endforeach; ?>
     </nav>
@@ -178,16 +196,16 @@ $renderCourseCard = function ($course) use ($h, $deptIcon, $deptSlug, $isStudent
     <div class="d-flex flex-wrap align-items-center gap-2 mb-4 small">
         <span class="text-muted"><?php echo count($courses); ?> result<?php echo count($courses) === 1 ? '' : 's'; ?></span>
         <?php if ($search !== ''): ?>
-            <a class="active-filter-pill" href="<?php echo $h($catalogUrl(['search' => ''])); ?>">“<?php echo $h($search); ?>” <i class="bi bi-x"></i></a>
+            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['search' => ''])); ?>">“<?php echo $h($search); ?>” <i class="bi bi-x"></i></a>
         <?php endif; ?>
         <?php if ($department !== ''): ?>
-            <a class="active-filter-pill" href="<?php echo $h($catalogUrl(['department' => ''])); ?>"><?php echo $h($department); ?> <i class="bi bi-x"></i></a>
+            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['department' => ''])); ?>"><?php echo $h($department); ?> <i class="bi bi-x"></i></a>
         <?php endif; ?>
         <?php if ($status !== 'all'): ?>
-            <a class="active-filter-pill" href="<?php echo $h($catalogUrl(['status' => 'all'])); ?>"><?php echo $h($statusLabels[$status]); ?> <i class="bi bi-x"></i></a>
+            <a class="badge rounded-pill bg-soft-primary text-primary px-3 py-2 text-decoration-none active-filter-pill" href="<?php echo $h($catalogUrl(['status' => 'all'])); ?>"><?php echo $h($statusLabels[$status]); ?> <i class="bi bi-x"></i></a>
         <?php endif; ?>
         <?php if ($hasActiveFilters): ?>
-            <a class="ms-1 fw-semibold" href="index.php?page=courses">Clear all</a>
+            <a class="ms-1 fw-semibold text-primary" href="index.php?page=courses">Clear all</a>
         <?php endif; ?>
     </div>
 
