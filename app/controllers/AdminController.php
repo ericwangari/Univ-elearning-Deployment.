@@ -180,19 +180,21 @@ class AdminController {
         requireRole('Admin');
 
         $instructors = $this->getApprovedInstructors();
+        $departments = getAllDepartments($this->pdo);
         $errors = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $course_name = trim($_POST['course_name'] ?? '');
             $description = trim($_POST['description'] ?? '');
             $instructor_id = $_POST['instructor_id'] ?? '';
+            $department = normalizeDepartmentInput($_POST['department'] ?? '', $course_name, $description);
 
             if ($course_name === '') {
                 $errors[] = "Course name is required.";
             }
 
             if (empty($errors)) {
-                $course_id = $this->insertCourse($course_name, $description);
+                $course_id = $this->insertCourse($course_name, $description, $department);
 
                 if ($instructor_id !== '') {
                     $stmt = $this->pdo->prepare("INSERT IGNORE INTO instructor_courses (InstructorID, CourseID) VALUES (?, ?)");
@@ -212,6 +214,7 @@ class AdminController {
 
         $course_id = $_GET['id'] ?? ($_POST['course_id'] ?? null);
         $instructors = $this->getApprovedInstructors();
+        $departments = getAllDepartments($this->pdo);
         $errors = [];
 
         $stmt = $this->pdo->prepare("SELECT c.*, ic.InstructorID FROM courses c
@@ -229,14 +232,15 @@ class AdminController {
             $course_name = trim($_POST['course_name'] ?? '');
             $description = trim($_POST['description'] ?? '');
             $instructor_id = $_POST['instructor_id'] ?? '';
+            $department = normalizeDepartmentInput($_POST['department'] ?? '', $course_name, $description);
 
             if ($course_name === '') {
                 $errors[] = "Course name is required.";
             }
 
             if (empty($errors)) {
-                $stmt = $this->pdo->prepare("UPDATE courses SET CourseName = ?, Description = ? WHERE CourseID = ?");
-                $stmt->execute([$course_name, $description, $course_id]);
+                $stmt = $this->pdo->prepare("UPDATE courses SET CourseName = ?, Description = ?, Department = ? WHERE CourseID = ?");
+                $stmt->execute([$course_name, $description, $department, $course_id]);
 
                 $stmt = $this->pdo->prepare("DELETE FROM instructor_courses WHERE CourseID = ?");
                 $stmt->execute([$course_id]);
@@ -480,16 +484,20 @@ class AdminController {
         return $stmt->fetchAll();
     }
 
-    private function insertCourse($courseName, $description) {
+    private function insertCourse($courseName, $description, $department = null) {
+        if ($department === null || $department === '') {
+            $department = guessCourseDepartment($courseName, $description);
+        }
+
         if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
-            $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?) RETURNING CourseID");
-            $stmt->execute([$courseName, $description]);
+            $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description, Department) VALUES (?, ?, ?) RETURNING CourseID");
+            $stmt->execute([$courseName, $description, $department]);
             $row = $stmt->fetch();
             return $row['CourseID'] ?? null;
         }
 
-        $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description) VALUES (?, ?)");
-        $stmt->execute([$courseName, $description]);
+        $stmt = $this->pdo->prepare("INSERT INTO courses (CourseName, Description, Department) VALUES (?, ?, ?)");
+        $stmt->execute([$courseName, $description, $department]);
         return $this->pdo->lastInsertId();
     }
 }

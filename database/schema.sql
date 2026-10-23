@@ -45,7 +45,9 @@ CREATE TABLE IF NOT EXISTS courses (
     CourseID INT AUTO_INCREMENT PRIMARY KEY,
     CourseName VARCHAR(100) NOT NULL,
     Description TEXT,
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    Department VARCHAR(100) NULL DEFAULT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_courses_department (Department)
 ) ENGINE=InnoDB;
 
 -- Table 3: Enrollment

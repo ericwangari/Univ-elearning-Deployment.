@@ -20,6 +20,19 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                 </div>
 
                 <div class="mb-4">
+                    <label class="form-label fw-bold">Department</label>
+                    <input type="text" name="department" class="form-control" list="departmentList" placeholder="e.g. Computer Science, Business...">
+                    <datalist id="departmentList">
+                        <?php if (!empty($departments)): ?>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?php echo htmlspecialchars($dept); ?>">
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </datalist>
+                    <div class="form-text">Categorize your course. Leave blank to auto-detect from the title and description.</div>
+                </div>
+
+                <div class="mb-4">
                     <label class="form-label fw-bold">Description</label>
                     <textarea name="description" class="form-control" rows="6" required placeholder="Describe what the course covers, who it's for, and what students will achieve..."></textarea>
                 </div>

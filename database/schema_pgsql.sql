@@ -73,8 +73,10 @@ CREATE TABLE IF NOT EXISTS courses (
     courseid    SERIAL PRIMARY KEY,
     coursename  VARCHAR(100) NOT NULL,
     description TEXT,
+    department  VARCHAR(100) NULL DEFAULT NULL,
     createdat   TIMESTAMP NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_courses_department ON courses (department);
 
 -- --------------------------------------------------------
 -- Table 5: enrollments

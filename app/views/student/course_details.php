@@ -60,12 +60,15 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                                     <?php if (!empty($content['ContentURL'])): ?>
                                         <div class="lesson-body mt-3">
                                             <?php echo nl2br(htmlspecialchars($content['ContentURL'])); ?>
-                                            <div class="mt-3">
+                                            <div class="mt-3 d-flex flex-wrap gap-2">
                                                 <a href="<?php echo htmlspecialchars($materialUrl); ?>" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer">
                                                     Open full lesson
                                                 </a>
-                                                <a href="<?php echo htmlspecialchars($pdfUrl); ?>" class="btn btn-sm btn-outline-danger ms-2" target="_blank" rel="noopener noreferrer">
+                                                <a href="<?php echo htmlspecialchars($pdfUrl); ?>" class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener noreferrer">
                                                     Open PDF
+                                                </a>
+                                                <a href="?page=ai-teacher&course_id=<?php echo urlencode($course['CourseID']); ?>&lesson=<?php echo urlencode($content['ContentTitle']); ?>" class="btn btn-sm btn-soft-primary">
+                                                    <i class="bi bi-stars me-1"></i> Ask AI Teacher
                                                 </a>
                                             </div>
                                         </div>
@@ -142,6 +145,9 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                     <div class="alert alert-success text-center mb-3">
                         <i class="bi bi-check-circle-fill me-2"></i> You are enrolled
                     </div>
+                    <a href="?page=ai-teacher&course_id=<?php echo urlencode($course['CourseID']); ?>" class="btn btn-primary w-100 fw-bold py-2 mb-2">
+                        <i class="bi bi-stars me-2"></i> Tutor with AI Teacher
+                    </a>
                     <form method="POST" action="?page=drop">
                         <input type="hidden" name="course_id" value="<?php echo $course['CourseID']; ?>">
                         <button type="submit" class="btn btn-outline-danger w-100 fw-bold" onclick="confirmAction(event, 'Drop this course?', 'You will lose access to materials!')">Drop Course</button>

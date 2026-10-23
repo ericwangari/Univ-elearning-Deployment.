@@ -47,7 +47,8 @@ class AppPDOStatement {
             'enrollmentcount'=>'EnrollmentCount','quizcount'=>'QuizCount','studentnames'=>'StudentNames',
             'quizscore'=>'QuizScore','quiztotal'=>'QuizTotal','midtermscore'=>'MidtermScore','midtermtotal'=>'MidtermTotal',
             'finalscore'=>'FinalScore','finaltotal'=>'FinalTotal','assignmentscore'=>'AssignmentScore',
-            'assignmenttotal'=>'AssignmentTotal','totalattempts'=>'TotalAttempts','failedattempts'=>'FailedAttempts'
+            'assignmenttotal'=>'AssignmentTotal','totalattempts'=>'TotalAttempts','failedattempts'=>'FailedAttempts',
+            'department'=>'Department','coursecount'=>'CourseCount'
         ];
         foreach ($row as $key => $value) {
             if (is_string($key)) {

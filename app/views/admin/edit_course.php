@@ -32,6 +32,19 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                         </div>
 
                         <div class="mb-3">
+                            <label for="department" class="form-label fw-bold">Department</label>
+                            <input type="text" class="form-control" id="department" name="department" list="departmentList" value="<?php echo htmlspecialchars($course['Department'] ?? ''); ?>" placeholder="e.g. Computer Science, Business...">
+                            <datalist id="departmentList">
+                                <?php if (!empty($departments)): ?>
+                                    <?php foreach ($departments as $dept): ?>
+                                        <option value="<?php echo htmlspecialchars($dept); ?>">
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </datalist>
+                            <small class="text-muted">Select an existing department or type a new one.</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="description" class="form-label fw-bold">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($course['Description'] ?? ''); ?></textarea>
                         </div>

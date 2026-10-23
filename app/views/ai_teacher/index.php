@@ -2,84 +2,170 @@
 $page_title = 'AI Teacher';
 include __DIR__ . '/../partials/header.php';
 include __DIR__ . '/../partials/sidebar_v2.php';
+
+$h = function ($str) {
+    return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
+};
+
+$aiStatusText = 'Built-in Pedagogical Mode';
+$aiStatusClass = 'bg-light text-muted border';
+if (defined('AI_TEACHER_API_KEY') && AI_TEACHER_API_KEY !== '') {
+    $aiStatusText = 'OpenAI AI Connected';
+    $aiStatusClass = 'bg-soft-success text-success border-success';
+} elseif (defined('GEMINI_API_KEY') && GEMINI_API_KEY !== '') {
+    $aiStatusText = 'Gemini AI Connected';
+    $aiStatusClass = 'bg-soft-success text-success border-success';
+}
 ?>
 
 <div class="container-fluid p-4">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-3">
         <div>
-            <span class="badge bg-soft-primary text-primary mb-2">AI Learning Assistant</span>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-soft-primary text-primary">Interactive 1-on-1 Academic Tutor</span>
+                <span class="badge <?php echo $aiStatusClass; ?>">
+                    <i class="bi bi-cpu me-1"></i><?php echo $aiStatusText; ?>
+                </span>
+            </div>
             <h1 class="fw-bold mb-1">AI Teacher</h1>
-            <p class="text-muted mb-0">Generate explanations, study plans, mini-lessons, and practice questions for your courses.</p>
+            <p class="text-muted mb-0">Ask questions, get step-by-step explanations, generate practice problems, and master your courses.</p>
         </div>
-        <div class="ai-teacher-orb mt-3 mt-lg-0" aria-hidden="true">
-            <i class="bi bi-stars"></i>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="aiClearChatBtn" title="Clear current chat">
+                <i class="bi bi-trash3 me-1"></i> Clear Chat
+            </button>
         </div>
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card p-4 h-100">
-                <form method="POST" class="needs-validation" novalidate>
-                    <div class="mb-3">
-                        <label for="aiCourse" class="form-label fw-semibold">Course context</label>
-                        <select class="form-select" id="aiCourse" name="course_id">
-                            <option value="">General learning support</option>
-                            <?php foreach ($courses as $course): ?>
-                                <option value="<?php echo htmlspecialchars($course['CourseID'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo (string)$selectedCourseId === (string)$course['CourseID'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($course['CourseName'], ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+        <!-- Sidebar: Course Context & Lessons -->
+        <div class="col-lg-4 col-xl-3">
+            <div class="card border-0 shadow-sm p-3 mb-4">
+                <label for="aiCourseSelect" class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-mortarboard me-1 text-primary"></i> Course Context
+                </label>
+                <select class="form-select shadow-none mb-3" id="aiCourseSelect">
+                    <option value="">General Academic Support</option>
+                    <?php foreach ($courses as $c): ?>
+                        <option value="<?php echo $h($c['CourseID']); ?>" <?php echo (string)$selectedCourseId === (string)$c['CourseID'] ? 'selected' : ''; ?>>
+                            <?php echo $h($c['CourseName']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
 
-                    <div class="mb-3">
-                        <label for="aiMode" class="form-label fw-semibold">What should the AI teacher create?</label>
-                        <select class="form-select" id="aiMode" name="mode">
-                            <option value="explain" <?php echo $mode === 'explain' ? 'selected' : ''; ?>>Explain a concept</option>
-                            <option value="plan" <?php echo $mode === 'plan' ? 'selected' : ''; ?>>Study plan</option>
-                            <option value="content" <?php echo $mode === 'content' ? 'selected' : ''; ?>>Mini-lesson content</option>
-                            <option value="practice" <?php echo $mode === 'practice' ? 'selected' : ''; ?>>Practice questions</option>
-                        </select>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label fw-semibold text-muted small mb-0 text-uppercase" style="letter-spacing: 0.5px;">
+                        Course Lessons
+                    </label>
+                    <small class="text-muted">Click to focus</small>
+                </div>
+                <div class="ai-lessons-list" id="aiLessonsList" style="max-height: 280px; overflow-y: auto;">
+                    <?php if (!empty($lessons)): ?>
+                        <?php foreach ($lessons as $l): ?>
+                            <div class="ai-lesson-item d-flex align-items-center justify-content-between mb-1 <?php echo strcasecmp($selectedLesson, $l['title']) === 0 ? 'active' : ''; ?>"
+                                 data-lesson-title="<?php echo $h($l['title']); ?>">
+                                <span class="text-truncate me-2"><i class="bi bi-journal-bookmark me-1 text-primary"></i> <?php echo $h($l['title']); ?></span>
+                                <i class="bi bi-arrow-right-short text-muted"></i>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-muted small p-2">Select a course to view lessons.</div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
-                    <div class="mb-4">
-                        <label for="aiQuestion" class="form-label fw-semibold">Question or topic</label>
-                        <textarea class="form-control" id="aiQuestion" name="question" rows="7" required placeholder="Example: Explain database joins with a simple example"><?php echo htmlspecialchars($question ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-                        <div class="invalid-feedback">Enter a question or topic for the AI teacher.</div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 fw-bold py-3">
-                        <i class="bi bi-magic me-2" aria-hidden="true"></i>Generate Learning Support
-                    </button>
-                </form>
+            <!-- Teaching Modes Quick Info -->
+            <div class="card border-0 shadow-sm p-3 bg-light">
+                <h6 class="fw-bold mb-2"><i class="bi bi-lightbulb text-warning me-1"></i> Tutor Modes</h6>
+                <p class="small text-muted mb-2">Switch teaching styles depending on what you need:</p>
+                <ul class="list-unstyled small mb-0">
+                    <li class="mb-1"><strong>Explain:</strong> In-depth concept breakdown</li>
+                    <li class="mb-1"><strong>Simplify:</strong> ELI5 analogies and plain language</li>
+                    <li class="mb-1"><strong>Example:</strong> Real-world code and case studies</li>
+                    <li class="mb-1"><strong>Quiz Me:</strong> Interactive Socratic Q&A</li>
+                    <li class="mb-1"><strong>Study Plan:</strong> Day-by-day mastery roadmap</li>
+                </ul>
             </div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold mb-0">Teacher Response</h4>
-                    <span class="badge bg-light text-muted border"><?php echo AI_TEACHER_API_KEY !== '' ? 'AI enabled' : 'Built-in mode'; ?></span>
+        <!-- Main Chat Area -->
+        <div class="col-lg-8 col-xl-9">
+            <div class="card border-0 shadow-sm ai-teacher-chat-card p-3">
+                <!-- Top controls: Mode Pills & Focus Lesson Pill -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-3 mb-2 border-bottom">
+                    <!-- Mode Buttons -->
+                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Tutor mode">
+                        <button type="button" class="btn btn-sm btn-primary js-mode-btn" data-mode="explain">Explain</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="simplify">Simplify (ELI5)</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="example">Real Example</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="quiz_me">Quiz Me 🎯</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="practice">Practice</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="plan">Study Plan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-mode-btn" data-mode="summary">Summary</button>
+                    </div>
+
+                    <!-- Active Focus Lesson Pill -->
+                    <div id="aiFocusLessonPill" class="<?php echo $selectedLesson !== '' ? '' : 'd-none'; ?>">
+                        <span class="badge bg-soft-primary text-primary px-2 py-1 d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-bookmark-fill"></i>
+                            <span id="aiFocusLessonText" data-lesson="<?php echo $h($selectedLesson); ?>"><?php echo $h($selectedLesson); ?></span>
+                            <button type="button" class="btn-close btn-close-xs ms-1" id="aiClearLessonBtn" aria-label="Remove lesson focus" style="font-size: 0.6rem;"></button>
+                        </span>
+                    </div>
                 </div>
 
-                <?php if (!empty($error)): ?>
-                    <div class="alert alert-warning"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
-                <?php endif; ?>
+                <!-- Messages Container -->
+                <div class="ai-chat-messages" id="aiChatMessages">
+                    <!-- Default Starter Content when empty -->
+                    <div class="js-starter-wrapper text-center my-auto py-5" id="aiStarterPrompts">
+                        <div class="ai-avatar mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem;">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <h4 class="fw-bold mb-2">Hello! How can I help you learn today?</h4>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            I can break down tough concepts, guide you with real-world examples, test your knowledge with interactive questions, or build a study plan.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-2" style="max-width: 650px; margin: 0 auto;">
+                            <button type="button" class="btn ai-quick-btn js-quick-action" data-mode="explain" data-prompt="Explain the most important core concept of this course with a clear breakdown.">
+                                💡 Explain core concept
+                            </button>
+                            <button type="button" class="btn ai-quick-btn js-quick-action" data-mode="quiz_me" data-prompt="Quiz me! Give me a multiple choice question to test my understanding.">
+                                🎯 Test my knowledge (Quiz me)
+                            </button>
+                            <button type="button" class="btn ai-quick-btn js-quick-action" data-mode="example" data-prompt="Give me a real-world project example showing how this topic is applied.">
+                                🔍 Show a real-world example
+                            </button>
+                            <button type="button" class="btn ai-quick-btn js-quick-action" data-mode="simplify" data-prompt="Explain this course to me like I am 10 years old.">
+                                🧸 Explain like I'm 5
+                            </button>
+                            <button type="button" class="btn ai-quick-btn js-quick-action" data-mode="plan" data-prompt="Create a practical 5-day study plan to master this material.">
+                                📅 5-day study plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                <?php if (!empty($ai_response)): ?>
-                    <div class="ai-teacher-response">
-                        <?php echo nl2br(htmlspecialchars($ai_response, ENT_QUOTES, 'UTF-8')); ?>
+                <!-- Input Box -->
+                <div class="pt-3 border-top mt-2">
+                    <div class="input-group">
+                        <textarea id="aiMessageInput" class="form-control border-end-0 shadow-none" rows="1"
+                                  placeholder="Ask anything, describe what you're stuck on, or answer the quiz question... (Enter to send, Shift+Enter for new line)"
+                                  style="resize: none;"></textarea>
+                        <button class="btn btn-primary px-4 fw-bold" type="button" id="aiSendBtn">
+                            <i class="bi bi-send-fill me-1"></i> Send
+                        </button>
                     </div>
-                <?php else: ?>
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-robot display-4 text-primary"></i>
-                        <h5 class="fw-bold mt-3">Ask for help with any topic</h5>
-                        <p class="mb-0">The AI teacher can explain ideas, generate mini-lessons, create practice questions, and build study plans.</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2 px-1 text-muted" style="font-size: 0.75rem;">
+                        <span><i class="bi bi-shield-check me-1"></i> Academic Tutor · Safe & educational guidance</span>
+                        <span>Press <kbd style="font-size: 0.7rem;">Enter</kbd> to send</span>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="/js/ai-teacher.js?v=2"></script>
 
 <?php include __DIR__ . '/../partials/footer.php'; ?>

@@ -117,46 +117,95 @@ class CourseController {
 
         $user_id = $_SESSION['user_id'];
 
-        // Get search and filter
-        $search = $_GET['search'] ?? '';
-        $sort = $_GET['sort'] ?? 'new';
+        // ---- Read + whitelist filters ----
+        $search = trim((string)($_GET['search'] ?? ''));
+        $search = function_exists('mb_substr') ? mb_substr($search, 0, 100) : substr($search, 0, 100);
+        $department = trim((string)($_GET['department'] ?? ''));
 
-        $query = "SELECT c.*, 
-                  CASE WHEN EXISTS (
-                      SELECT 1 FROM enrollments own_e
-                      WHERE own_e.CourseID = c.CourseID AND own_e.UserID = ?
-                  ) THEN 1 ELSE 0 END as IsEnrolled,
+        $sortOptions = [
+            'new'        => 'c.CreatedAt DESC',
+            'popular'    => 'StudentCount DESC, c.CourseName ASC',
+            'az'         => 'c.CourseName ASC',
+            'za'         => 'c.CourseName DESC',
+            'department' => 'c.Department ASC, c.CourseName ASC',
+        ];
+        $sort = $_GET['sort'] ?? 'new';
+        if (!isset($sortOptions[$sort])) $sort = 'new';
+
+        $status = $_GET['status'] ?? 'all';
+        if (!in_array($status, ['all', 'enrolled', 'available'], true)) $status = 'all';
+
+        $view = $_GET['view'] ?? 'grid';
+        if (!in_array($view, ['grid', 'grouped'], true)) $view = 'grid';
+
+        // ---- Build query ----
+        $enrolledExpr = "EXISTS (SELECT 1 FROM enrollments own_e WHERE own_e.CourseID = c.CourseID AND own_e.UserID = ?)";
+
+        $query = "SELECT c.*,
+                  CASE WHEN $enrolledExpr THEN 1 ELSE 0 END as IsEnrolled,
                   COUNT(DISTINCT e2.EnrollmentID) as StudentCount,
                   GROUP_CONCAT(DISTINCT u.Username ORDER BY u.Username SEPARATOR ', ') as InstructorNames
-                  FROM courses c 
+                  FROM courses c
                   LEFT JOIN enrollments e2 ON c.CourseID = e2.CourseID
                   LEFT JOIN instructor_courses ic ON c.CourseID = ic.CourseID
                   LEFT JOIN users u ON ic.InstructorID = u.UserID
                   WHERE 1=1";
-        
         $params = [$user_id];
 
-        if (!empty($search)) {
-            $query .= " AND (c.CourseName LIKE ? OR c.Description LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+        if ($search !== '') {
+            $like = '%' . strtolower($search) . '%';
+            $query .= " AND (LOWER(c.CourseName) LIKE ? OR LOWER(c.Description) LIKE ?
+                        OR EXISTS (SELECT 1 FROM instructor_courses sic JOIN users su ON su.UserID = sic.InstructorID
+                                   WHERE sic.CourseID = c.CourseID AND LOWER(su.Username) LIKE ?))";
+            array_push($params, $like, $like, $like);
         }
 
-        $query .= " GROUP BY c.CourseID";
-
-        // Add sorting
-        if ($sort === 'new') {
-            $query .= " ORDER BY c.CreatedAt DESC";
-        } elseif ($sort === 'popular') {
-            $query .= " ORDER BY StudentCount DESC";
+        if ($department !== '') {
+            $query .= " AND c.Department = ?";
+            $params[] = $department;
         }
+
+        if ($status === 'enrolled') {
+            $query .= " AND $enrolledExpr";
+            $params[] = $user_id;
+        } elseif ($status === 'available') {
+            $query .= " AND NOT $enrolledExpr";
+            $params[] = $user_id;
+        }
+
+        $orderBy = $view === 'grouped' ? 'c.Department ASC, ' . $sortOptions[$sort] : $sortOptions[$sort];
+        $query .= " GROUP BY c.CourseID ORDER BY " . $orderBy;
 
         $stmt = $this->pdo->prepare($query);
         $stmt->execute($params);
         $courses = $stmt->fetchAll();
 
+        foreach ($courses as &$course) {
+            if (empty($course['Department'])) {
+                $course['Department'] = guessCourseDepartment($course['CourseName'] ?? '', $course['Description'] ?? '');
+            }
+        }
+        unset($course);
+
+        // Group for the "by department" view
+        $coursesByDepartment = [];
+        foreach ($courses as $course) {
+            $coursesByDepartment[$course['Department']][] = $course;
+        }
+
+        // ---- Department facets (counts across the whole catalog) ----
+        $departmentCounts = [];
+        $stmt = $this->pdo->query("SELECT Department, COUNT(*) as CourseCount FROM courses GROUP BY Department ORDER BY Department");
+        foreach ($stmt->fetchAll() as $row) {
+            $name = $row['Department'] ?: 'Unassigned';
+            $departmentCounts[$name] = (int)$row['CourseCount'];
+        }
+        $total_course_count = array_sum($departmentCounts);
+
         $stmt = $this->pdo->query("SELECT COUNT(DISTINCT UserID) FROM enrollments");
         $student_count = (int)$stmt->fetchColumn();
+
+        $filters = compact('search', 'department', 'sort', 'status', 'view');
 
         require __DIR__ . '/../views/student/courses.php';
     }

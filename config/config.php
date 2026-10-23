@@ -2,6 +2,7 @@
 require_once __DIR__ . '/database_compat.php';
 require_once __DIR__ . '/CookieSessionHandler.php';
 require_once __DIR__ . '/languages.php';
+require_once __DIR__ . '/departments.php';
 
 /* -----------------------------
    LOAD ENV FILE (IF EXISTS)
@@ -119,6 +120,17 @@ if ($aiTeacherApiKey === '') $aiTeacherApiKey = getenv('AI_TEACHER_API_KEY') ?: 
 $aiTeacherModel = $localConfig['ai_teacher_model'] ?? '';
 if ($aiTeacherModel === '') $aiTeacherModel = getenv('AI_TEACHER_MODEL') ?: 'gpt-4o-mini';
 
+// Optional: any OpenAI-compatible endpoint (Groq, OpenRouter, Azure, local LLMs...)
+$aiTeacherBaseUrl = $localConfig['ai_teacher_base_url'] ?? '';
+if ($aiTeacherBaseUrl === '') $aiTeacherBaseUrl = getenv('AI_TEACHER_BASE_URL') ?: 'https://api.openai.com/v1';
+
+// Optional: Google Gemini (used when no OpenAI-compatible key is set)
+$geminiApiKey = $localConfig['gemini_api_key'] ?? '';
+if ($geminiApiKey === '') $geminiApiKey = getenv('GEMINI_API_KEY') ?: getenv('GOOGLE_AI_API_KEY') ?: '';
+
+$geminiModel = $localConfig['gemini_model'] ?? '';
+if ($geminiModel === '') $geminiModel = getenv('GEMINI_MODEL') ?: 'gemini-2.0-flash';
+
 define('MAIL_FROM', $mailFrom);
 define('MAIL_FROM_NAME', $mailFromName);
 define('SMTP_HOST', $smtpHost);
@@ -133,6 +145,9 @@ define('GOOGLE_CLIENT_SECRET', $googleClientSecret);
 define('GOOGLE_REDIRECT_URI', $googleRedirectUri !== '' ? $googleRedirectUri : rtrim(BASE_URL, '/') . '/index.php?page=google-callback');
 define('AI_TEACHER_API_KEY', $aiTeacherApiKey);
 define('AI_TEACHER_MODEL', $aiTeacherModel);
+define('AI_TEACHER_BASE_URL', rtrim($aiTeacherBaseUrl, '/'));
+define('GEMINI_API_KEY', $geminiApiKey);
+define('GEMINI_MODEL', $geminiModel);
 
 $isVercelRuntime = getenv('VERCEL') === '1' || getenv('VERCEL_URL') !== false || getenv('VERCEL_PROJECT_PRODUCTION_URL') !== false;
 define('IS_LOCAL_DEV', !$isVercelRuntime && in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1', '::1'], true));
@@ -374,6 +389,36 @@ try {
     }
 } catch (Exception $e) {
     error_log("Terms acceptance column warning: " . $e->getMessage());
+}
+
+// Course departments: add column if missing, then backfill any empty values.
+try {
+    $colCheck = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.columns
+          WHERE table_name = 'courses' AND column_name = :col"
+    );
+    $columnName = DB_DRIVER === 'pgsql' ? 'department' : 'Department';
+    $colCheck->execute([':col' => $columnName]);
+    if ((int)$colCheck->fetchColumn() === 0) {
+        if (DB_DRIVER === 'pgsql') {
+            $pdo->exec('ALTER TABLE courses ADD COLUMN department VARCHAR(100) NULL DEFAULT NULL');
+        } else {
+            $pdo->exec("ALTER TABLE courses ADD COLUMN Department VARCHAR(100) NULL DEFAULT NULL AFTER Description");
+        }
+    }
+
+    $missing = $pdo->query("SELECT CourseID, CourseName, Description FROM courses WHERE Department IS NULL OR Department = ''")->fetchAll();
+    if (!empty($missing)) {
+        $update = $pdo->prepare("UPDATE courses SET Department = ? WHERE CourseID = ?");
+        foreach ($missing as $row) {
+            $update->execute([
+                guessCourseDepartment($row['CourseName'] ?? '', $row['Description'] ?? ''),
+                $row['CourseID'],
+            ]);
+        }
+    }
+} catch (Exception $e) {
+    error_log("Course department column warning: " . $e->getMessage());
 }
 
 /* -----------------------------

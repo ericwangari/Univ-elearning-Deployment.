@@ -88,6 +88,14 @@ switch ($page) {
         $aiTeacherCtrl->index();
         break;
 
+    case 'ai-teacher-chat':
+        $aiTeacherCtrl->chat();
+        break;
+
+    case 'ai-teacher-lessons':
+        $aiTeacherCtrl->lessons();
+        break;
+
     case 'delete-account':
         $accountCtrl->deleteAccount();
         break;
