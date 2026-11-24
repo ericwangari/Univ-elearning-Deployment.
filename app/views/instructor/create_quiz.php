@@ -77,11 +77,16 @@ include __DIR__ . '/../partials/sidebar_v2.php';
                             <small class="text-muted">Maximum score for this assessment (capped at 100)</small>
                         </div>
 
-                        <div class="d-grid gap-2">
+                        <div class="d-grid gap-2 mb-3">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-plus-circle me-2"></i> Create Assessment
                             </button>
                             <a href="?page=dashboard" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+
+                        <div class="p-3 bg-light rounded border text-muted small">
+                            <i class="bi bi-stars text-primary me-1"></i>
+                            <strong>Next Step:</strong> After creating the assessment, you can immediately generate questions from your course materials using the <strong>AI Teacher</strong> or batch-import questions from <strong>CSV, Aiken, or plain text</strong>!
                         </div>
                     </form>
                 </div>

@@ -233,10 +233,15 @@ class InstructorController {
                 exit;
             }
 
-            $stmt = $this->pdo->prepare("INSERT INTO quizzes (QuizName, CourseID, QuizType, Description, TotalMarks) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$quiz_name, $course_id, $quiz_type, $description, $total_marks]);
-
-            $quiz_id = $this->pdo->lastInsertId();
+            if (DB_DRIVER === 'pgsql') {
+                $stmt = $this->pdo->prepare("INSERT INTO quizzes (QuizName, CourseID, QuizType, Description, TotalMarks) VALUES (?, ?, ?, ?, ?) RETURNING QuizID");
+                $stmt->execute([$quiz_name, $course_id, $quiz_type, $description, $total_marks]);
+                $quiz_id = $stmt->fetchColumn();
+            } else {
+                $stmt = $this->pdo->prepare("INSERT INTO quizzes (QuizName, CourseID, QuizType, Description, TotalMarks) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$quiz_name, $course_id, $quiz_type, $description, $total_marks]);
+                $quiz_id = $this->pdo->lastInsertId();
+            }
             $_SESSION['success'] = 'Assessment created successfully.';
             if ((int)$_POST['total_marks'] > 100) {
                 $_SESSION['success'] = 'Assessment created successfully. Total marks were capped at the maximum allowed value of 100.';
@@ -273,6 +278,20 @@ class InstructorController {
         }
 
         $page_title = 'Manage ' . htmlspecialchars($quiz['QuizType']) . ': ' . htmlspecialchars($quiz['QuizName']);
+
+        // Get course details & lessons for AI and materials context
+        $stmt = $this->pdo->prepare("SELECT * FROM courses WHERE CourseID = ?");
+        $stmt->execute([$quiz['CourseID']]);
+        $course = $stmt->fetch();
+
+        $aiTeacher = new AiTeacherController($this->pdo);
+        $courseLessons = $aiTeacher->getCourseLessons($quiz['CourseID'], $course['CourseName'] ?? '');
+
+        // Calculate marks remaining
+        $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(Marks), 0) FROM questions WHERE QuizID = ?");
+        $stmt->execute([$quiz_id]);
+        $currentMarks = (int)$stmt->fetchColumn();
+        $availableMarks = max(0, (int)$quiz['TotalMarks'] - $currentMarks);
 
         // Get questions
         $stmt = $this->pdo->prepare("SELECT * FROM questions WHERE QuizID = ? ORDER BY QuestionID");
@@ -461,6 +480,453 @@ class InstructorController {
 
         header("Location: " . $redirect);
         exit;
+    }
+
+    // Import questions in batch (Aiken format, CSV, JSON, or from AI Teacher Generator)
+    public function importQuestions() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'Instructor') {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Unauthorized']);
+                exit;
+            }
+            header("Location: index.php?page=login");
+            exit;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $jsonData = json_decode($rawInput, true);
+
+        $quiz_id = $_POST['quiz_id'] ?? $jsonData['quiz_id'] ?? null;
+        $instructor_id = $_SESSION['user_id'];
+        $redirect = "index.php?page=manage-quiz&id={$quiz_id}";
+
+        // Verify quiz belongs to instructor's course
+        $stmt = $this->pdo->prepare("SELECT q.* FROM quizzes q 
+                                     JOIN courses c ON q.CourseID = c.CourseID 
+                                     JOIN instructor_courses ic ON c.CourseID = ic.CourseID 
+                                     WHERE q.QuizID = ? AND ic.InstructorID = ?");
+        $stmt->execute([$quiz_id, $instructor_id]);
+        $quiz = $stmt->fetch();
+
+        if (!$quiz) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Assessment not found or access denied.']);
+                exit;
+            }
+            $_SESSION['error'] = 'Assessment not found or access denied.';
+            header("Location: index.php?page=manage-courses");
+            exit;
+        }
+
+        // Calculate available marks
+        $quizTotal = (int)$quiz['TotalMarks'];
+        $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(Marks), 0) FROM questions WHERE QuizID = ?");
+        $stmt->execute([$quiz_id]);
+        $currentSum = (int)$stmt->fetchColumn();
+        $availableMarks = max(0, $quizTotal - $currentSum);
+
+        if ($availableMarks <= 0) {
+            $msg = "This assessment already has all its total marks assigned ({$quizTotal} points). Remove or adjust existing questions before adding more.";
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => $msg]);
+                exit;
+            }
+            $_SESSION['error'] = $msg;
+            header("Location: " . $redirect);
+            exit;
+        }
+
+        $defaultMarks = max(1, (int)($_POST['default_marks'] ?? $jsonData['default_marks'] ?? 1));
+        $questionsToImport = [];
+
+        // 1. Direct array passed via JSON (e.g. from AI generator)
+        if (!empty($jsonData['questions']) && is_array($jsonData['questions'])) {
+            $questionsToImport = $this->parseImportedQuestions(json_encode($jsonData['questions']), $defaultMarks);
+        }
+        // 2. Direct JSON string passed in form
+        elseif (!empty($_POST['json_questions'])) {
+            $questionsToImport = $this->parseImportedQuestions($_POST['json_questions'], $defaultMarks);
+        }
+        // 3. Uploaded file
+        elseif (!empty($_FILES['import_file']['tmp_name']) && is_uploaded_file($_FILES['import_file']['tmp_name'])) {
+            $fileContent = file_get_contents($_FILES['import_file']['tmp_name']);
+            $questionsToImport = $this->parseImportedQuestions($fileContent, $defaultMarks);
+        }
+        // 4. Text pasted in textarea
+        elseif (!empty($_POST['import_text'])) {
+            $questionsToImport = $this->parseImportedQuestions($_POST['import_text'], $defaultMarks);
+        }
+
+        if (empty($questionsToImport)) {
+            $msg = 'No valid questions could be detected. Please check your text/file format and try again.';
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => $msg]);
+                exit;
+            }
+            $_SESSION['error'] = $msg;
+            header("Location: " . $redirect);
+            exit;
+        }
+
+        // Insert questions in a transaction
+        $insertedCount = 0;
+        $totalMarksAllocated = 0;
+        $clamped = false;
+
+        try {
+            $this->pdo->beginTransaction();
+
+            foreach ($questionsToImport as $q) {
+                if ($availableMarks <= 0) {
+                    $clamped = true;
+                    break;
+                }
+
+                $marks = max(1, (int)($q['marks'] ?? $defaultMarks));
+                if ($marks > $availableMarks) {
+                    $marks = $availableMarks;
+                    $clamped = true;
+                }
+                $availableMarks -= $marks;
+                $totalMarksAllocated += $marks;
+
+                $qType = $q['type'] ?? 'Multiple Choice';
+                $qText = trim($q['text'] ?? '');
+                if ($qText === '') continue;
+
+                $questionId = $this->insertQuestion($quiz_id, $qText, $qType, $marks);
+
+                if ($qType === 'Multiple Choice' && !empty($q['options'])) {
+                    foreach ($q['options'] as $opt) {
+                        $this->insertQuestionOption($questionId, $opt['text'], !empty($opt['is_correct']));
+                    }
+                } elseif ($qType === 'True/False') {
+                    $isTrueCorrect = !empty($q['correct_is_true']);
+                    $this->insertQuestionOption($questionId, 'True', $isTrueCorrect);
+                    $this->insertQuestionOption($questionId, 'False', !$isTrueCorrect);
+                }
+
+                $insertedCount++;
+            }
+
+            $this->pdo->commit();
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log('Batch question import failed: ' . $e->getMessage());
+            $errMsg = 'Failed to import questions: ' . $e->getMessage();
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => $errMsg]);
+                exit;
+            }
+            $_SESSION['error'] = $errMsg;
+            header("Location: " . $redirect);
+            exit;
+        }
+
+        $successMsg = "Successfully imported {$insertedCount} question(s) ({$totalMarksAllocated} total marks added).";
+        if ($clamped) {
+            $successMsg .= " Total marks were capped to respect the {$quizTotal}-point maximum.";
+        }
+
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'count'   => $insertedCount,
+                'message' => $successMsg,
+                'redirect' => $redirect,
+            ]);
+            exit;
+        }
+
+        $_SESSION['success'] = $successMsg;
+        header("Location: " . $redirect);
+        exit;
+    }
+
+    // Generate questions for a quiz using the AI Teacher
+    public function generateQuizQuestions() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'Instructor') {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Unauthorized']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+
+        $quiz_id = $_GET['quiz_id'] ?? $_POST['quiz_id'] ?? null;
+        $instructor_id = $_SESSION['user_id'];
+
+        $stmt = $this->pdo->prepare("SELECT q.*, c.CourseName, c.Description, c.Department FROM quizzes q 
+                                     JOIN courses c ON q.CourseID = c.CourseID 
+                                     JOIN instructor_courses ic ON c.CourseID = ic.CourseID 
+                                     WHERE q.QuizID = ? AND ic.InstructorID = ?");
+        $stmt->execute([$quiz_id, $instructor_id]);
+        $quiz = $stmt->fetch();
+
+        if (!$quiz) {
+            echo json_encode(['error' => 'Assessment not found or access denied.']);
+            exit;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(Marks), 0) FROM questions WHERE QuizID = ?");
+        $stmt->execute([$quiz_id]);
+        $currentSum = (int)$stmt->fetchColumn();
+        $availableMarks = max(0, (int)$quiz['TotalMarks'] - $currentSum);
+
+        $topic = trim((string)($_GET['topic'] ?? $_POST['topic'] ?? ''));
+        $count = max(1, min(15, (int)($_GET['count'] ?? $_POST['count'] ?? 5)));
+        $type = trim((string)($_GET['type'] ?? $_POST['type'] ?? 'all'));
+        $difficulty = trim((string)($_GET['difficulty'] ?? $_POST['difficulty'] ?? 'standard'));
+
+        $aiTeacher = new AiTeacherController($this->pdo);
+        $questions = $aiTeacher->generateAssessmentQuestions($quiz, $topic, $count, $type, $difficulty);
+
+        echo json_encode([
+            'success'         => true,
+            'questions'       => $questions,
+            'available_marks' => $availableMarks,
+            'total_marks'     => (int)$quiz['TotalMarks'],
+            'current_marks'   => $currentSum,
+        ]);
+        exit;
+    }
+
+    private function parseImportedQuestions($rawInput, $defaultMarks = 1) {
+        $raw = trim((string)$rawInput);
+        if ($raw === '') return [];
+
+        // 1. Try JSON
+        $firstChar = substr($raw, 0, 1);
+        if ($firstChar === '[' || $firstChar === '{') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $items = isset($decoded['questions']) && is_array($decoded['questions']) ? $decoded['questions'] : $decoded;
+                $results = [];
+                foreach ($items as $item) {
+                    $text = trim((string)($item['question_text'] ?? $item['question'] ?? $item['text'] ?? ''));
+                    if ($text === '') continue;
+
+                    $rawType = trim((string)($item['question_type'] ?? $item['type'] ?? 'Multiple Choice'));
+                    if (stripos($rawType, 'true') !== false || stripos($rawType, 'false') !== false) {
+                        $type = 'True/False';
+                    } elseif (stripos($rawType, 'short') !== false) {
+                        $type = 'Short Answer';
+                    } else {
+                        $type = 'Multiple Choice';
+                    }
+
+                    $marks = max(1, (int)($item['marks'] ?? $defaultMarks));
+                    $options = [];
+                    $correctIsTrue = true;
+
+                    if ($type === 'Multiple Choice' && !empty($item['options']) && is_array($item['options'])) {
+                        $correctIndex = $item['correct_option'] ?? $item['correct'] ?? null;
+                        foreach ($item['options'] as $idx => $opt) {
+                            $optText = is_array($opt) ? trim((string)($opt['text'] ?? $opt['option'] ?? '')) : trim((string)$opt);
+                            $isCorr = is_array($opt) ? (!empty($opt['is_correct']) || !empty($opt['correct'])) : ($correctIndex !== null && ((string)$correctIndex === (string)$idx || strcasecmp((string)$correctIndex, $optText) === 0));
+                            if ($optText !== '') {
+                                $options[] = ['text' => $optText, 'is_correct' => (bool)$isCorr];
+                            }
+                        }
+                        // Default first if none marked
+                        $hasCorr = false;
+                        foreach ($options as $o) { if ($o['is_correct']) { $hasCorr = true; break; } }
+                        if (!$hasCorr && !empty($options)) $options[0]['is_correct'] = true;
+                    } elseif ($type === 'True/False') {
+                        $corr = $item['correct_answer'] ?? $item['correct'] ?? $item['answer'] ?? true;
+                        if (is_string($corr) && stripos($corr, 'f') === 0) {
+                            $correctIsTrue = false;
+                        } elseif (is_bool($corr)) {
+                            $correctIsTrue = $corr;
+                        }
+                    }
+
+                    $results[] = [
+                        'text'            => $text,
+                        'type'            => $type,
+                        'marks'           => $marks,
+                        'options'         => $options,
+                        'correct_is_true' => $correctIsTrue,
+                    ];
+                }
+                if (!empty($results)) return $results;
+            }
+        }
+
+        // 2. Check if Aiken Format (blocks separated by blank lines with ANSWER:)
+        if (preg_match('/ANSWER:\s*/i', $raw)) {
+            $blocks = preg_split('/\r?\n\s*\r?\n/', $raw);
+            $results = [];
+
+            foreach ($blocks as $block) {
+                $block = trim($block);
+                if ($block === '') continue;
+
+                $lines = preg_split('/\r?\n/', $block);
+                $qTextLines = [];
+                $optionsMap = [];
+                $answerVal = null;
+                $typeVal = null;
+                $marksVal = $defaultMarks;
+
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if ($trimmed === '') continue;
+
+                    if (preg_match('/^ANSWER:\s*(.+)$/i', $trimmed, $m)) {
+                        $answerVal = trim($m[1]);
+                    } elseif (preg_match('/^MARKS:\s*([0-9]+)$/i', $trimmed, $m)) {
+                        $marksVal = max(1, (int)$m[1]);
+                    } elseif (preg_match('/^TYPE:\s*(.+)$/i', $trimmed, $m)) {
+                        $typeVal = trim($m[1]);
+                    } elseif (preg_match('/^([A-Z])[\.\)]\s*(.+)$/i', $trimmed, $m)) {
+                        $optionsMap[strtoupper($m[1])] = trim($m[2]);
+                    } else {
+                        $qTextLines[] = $trimmed;
+                    }
+                }
+
+                $questionText = implode(' ', $qTextLines);
+                if ($questionText === '') continue;
+
+                // Determine type
+                if ($typeVal !== null) {
+                    if (stripos($typeVal, 'short') !== false) {
+                        $type = 'Short Answer';
+                    } elseif (stripos($typeVal, 'true') !== false || stripos($typeVal, 'false') !== false) {
+                        $type = 'True/False';
+                    } else {
+                        $type = 'Multiple Choice';
+                    }
+                } elseif (!empty($optionsMap)) {
+                    $type = 'Multiple Choice';
+                } elseif ($answerVal !== null && in_array(strtolower($answerVal), ['true', 'false', 't', 'f'], true)) {
+                    $type = 'True/False';
+                } else {
+                    $type = 'Short Answer';
+                }
+
+                $options = [];
+                $correctIsTrue = true;
+
+                if ($type === 'Multiple Choice') {
+                    $ansUpper = strtoupper((string)$answerVal);
+                    foreach ($optionsMap as $letter => $optText) {
+                        $isCorr = ($letter === $ansUpper || strcasecmp($optText, (string)$answerVal) === 0);
+                        $options[] = ['text' => $optText, 'is_correct' => $isCorr];
+                    }
+                    $hasCorr = false;
+                    foreach ($options as $o) { if ($o['is_correct']) { $hasCorr = true; break; } }
+                    if (!$hasCorr && !empty($options)) $options[0]['is_correct'] = true;
+                } elseif ($type === 'True/False') {
+                    if ($answerVal !== null && (stripos($answerVal, 'f') === 0 || strcasecmp($answerVal, '0') === 0)) {
+                        $correctIsTrue = false;
+                    }
+                }
+
+                $results[] = [
+                    'text'            => $questionText,
+                    'type'            => $type,
+                    'marks'           => $marksVal,
+                    'options'         => $options,
+                    'correct_is_true' => $correctIsTrue,
+                ];
+            }
+
+            if (!empty($results)) return $results;
+        }
+
+        // 3. Try CSV (comma-separated or tab-separated)
+        $lines = preg_split('/\r?\n/', $raw);
+        $results = [];
+
+        foreach ($lines as $i => $line) {
+            $line = trim($line);
+            if ($line === '') continue;
+
+            $cols = str_getcsv($line);
+            if (empty($cols) || count($cols) < 2) continue;
+
+            // Check if header row
+            if ($i === 0 && (stripos($cols[0], 'question') !== false || stripos($cols[0], 'prompt') !== false)) {
+                continue;
+            }
+
+            $qText = trim($cols[0]);
+            if ($qText === '') continue;
+
+            // Default column mapping: Question, OptionA, OptionB, OptionC, OptionD, Answer, Marks
+            if (count($cols) >= 5) {
+                $type = 'Multiple Choice';
+                $optA = trim($cols[1] ?? '');
+                $optB = trim($cols[2] ?? '');
+                $optC = trim($cols[3] ?? '');
+                $optD = trim($cols[4] ?? '');
+                $answer = trim($cols[5] ?? 'A');
+                $marks = isset($cols[6]) && is_numeric(trim($cols[6])) ? max(1, (int)$cols[6]) : $defaultMarks;
+
+                $rawOpts = [$optA, $optB, $optC, $optD];
+                $options = [];
+                $ansUpper = strtoupper($answer);
+
+                foreach ($rawOpts as $idx => $t) {
+                    if ($t === '') continue;
+                    $letter = chr(65 + $idx); // A, B, C, D
+                    $isCorr = ($letter === $ansUpper || (string)($idx + 1) === $answer || strcasecmp($t, $answer) === 0);
+                    $options[] = ['text' => $t, 'is_correct' => $isCorr];
+                }
+                $hasCorr = false;
+                foreach ($options as $o) { if ($o['is_correct']) { $hasCorr = true; break; } }
+                if (!$hasCorr && !empty($options)) $options[0]['is_correct'] = true;
+
+                $results[] = [
+                    'text'            => $qText,
+                    'type'            => $type,
+                    'marks'           => $marks,
+                    'options'         => $options,
+                    'correct_is_true' => true,
+                ];
+            } elseif (count($cols) >= 2) {
+                // True/False or Short Answer
+                $secondCol = trim($cols[1]);
+                $marks = isset($cols[2]) && is_numeric(trim($cols[2])) ? max(1, (int)$cols[2]) : $defaultMarks;
+
+                if (in_array(strtolower($secondCol), ['true', 'false', 't', 'f'], true)) {
+                    $results[] = [
+                        'text'            => $qText,
+                        'type'            => 'True/False',
+                        'marks'           => $marks,
+                        'options'         => [],
+                        'correct_is_true' => (stripos($secondCol, 't') === 0),
+                    ];
+                } else {
+                    $results[] = [
+                        'text'            => $qText,
+                        'type'            => 'Short Answer',
+                        'marks'           => $marks,
+                        'options'         => [],
+                        'correct_is_true' => true,
+                    ];
+                }
+            }
+        }
+
+        return $results;
+    }
+
+    private function isAjaxRequest() {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+            || (!empty($_POST['is_ajax']))
+            || (!empty($_GET['is_ajax']));
     }
 
     private function insertQuestion($quiz_id, $question_text, $question_type, $marks) {

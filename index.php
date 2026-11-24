@@ -270,6 +270,16 @@ switch ($page) {
         $instructorCtrl->addQuestion();
         break;
 
+    case 'import-questions':
+        if (!isLoggedIn()) redirect('?page=login');
+        $instructorCtrl->importQuestions();
+        break;
+
+    case 'generate-quiz-questions':
+        if (!isLoggedIn()) redirect('?page=login');
+        $instructorCtrl->generateQuizQuestions();
+        break;
+
     case 'delete-question':
         if (!isLoggedIn()) redirect('?page=login');
         $instructorCtrl->deleteQuestion();
