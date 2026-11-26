@@ -82,11 +82,7 @@ class SupportController {
             . "Submitted: " . date('Y-m-d H:i:s') . "\n\n"
             . "Message:\n" . $supportMessage . "\n";
 
-        if (SMTP_HOST !== '') {
-            return $this->sendSmtpEmail($to, $subject, $body, $fromEmail, $fromName, $replyTo);
-        }
-
-        return $this->sendPhpMailerEmail($to, $subject, $body, $fromEmail, $fromName, $replyTo);
+        return sendAppEmail($to, $subject, $body, $fromEmail, $fromName, $replyTo);
     }
 
     private function storeSupportRequest($name, $email, $topic, $message, $emailSent) {

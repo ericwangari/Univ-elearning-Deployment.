@@ -85,25 +85,25 @@ $defaultBaseUrl = $vercelHost !== '' ? 'https://' . $vercelHost . '/' : 'http://
 define('BASE_URL', $localConfig['base_url'] ?? getenv('BASE_URL') ?: $defaultBaseUrl);
 
 $mailFrom = $localConfig['mail_from'] ?? '';
-if ($mailFrom === '') $mailFrom = getenv('MAIL_FROM') ?: 'no-reply@univ-elearning.local';
+if ($mailFrom === '') $mailFrom = getenv('MAIL_FROM') ?: (getenv('SMTP_USERNAME') ?: 'univelearning01@gmail.com');
 
 $mailFromName = $localConfig['mail_from_name'] ?? '';
 if ($mailFromName === '') $mailFromName = getenv('MAIL_FROM_NAME') ?: APP_NAME;
 
+$smtpPassword = $localConfig['smtp_password'] ?? '';
+if ($smtpPassword === '') $smtpPassword = getenv('SMTP_PASSWORD') ?: getenv('FEEDBACK_SMTP_PASSWORD') ?: ($localConfig['feedback_smtp_password'] ?? '');
+
 $smtpHost = $localConfig['smtp_host'] ?? '';
-if ($smtpHost === '') $smtpHost = getenv('SMTP_HOST') ?: '';
+if ($smtpHost === '') $smtpHost = getenv('SMTP_HOST') ?: ($smtpPassword !== '' ? 'smtp.gmail.com' : '');
 
 $smtpPort = $localConfig['smtp_port'] ?? '';
 if ($smtpPort === '') $smtpPort = getenv('SMTP_PORT') ?: 587;
 
 $smtpUsername = $localConfig['smtp_username'] ?? '';
-if ($smtpUsername === '') $smtpUsername = getenv('SMTP_USERNAME') ?: '';
-
-$smtpPassword = $localConfig['smtp_password'] ?? '';
-if ($smtpPassword === '') $smtpPassword = getenv('SMTP_PASSWORD') ?: '';
+if ($smtpUsername === '') $smtpUsername = getenv('SMTP_USERNAME') ?: ($mailFrom !== '' ? $mailFrom : 'univelearning01@gmail.com');
 
 $smtpSecure = $localConfig['smtp_secure'] ?? '';
-if ($smtpSecure === '') $smtpSecure = getenv('SMTP_SECURE') ?: 'tls';
+if ($smtpSecure === '') $smtpSecure = getenv('SMTP_SECURE') ?: ((int)$smtpPort === 465 ? 'ssl' : 'tls');
 
 $googleClientId = $localConfig['google_client_id'] ?? '';
 if ($googleClientId === '') $googleClientId = getenv('GOOGLE_CLIENT_ID') ?: '';
@@ -471,31 +471,141 @@ function requireRole($role) {
     }
 }
 
-function sendStudentFeedbackEmail($student, $feedbackMessage) {
-    if (SMTP_HOST === '') {
+function loadAppPhpMailer() {
+    if (class_exists('\PHPMailer\PHPMailer\PHPMailer')) {
+        return true;
+    }
+
+    $autoloadPath = __DIR__ . '/../vendor/autoload.php';
+    if (is_file($autoloadPath)) {
+        require_once $autoloadPath;
+    }
+
+    $manualSrc = __DIR__ . '/../PHPMailer/src';
+    if (
+        is_file($manualSrc . '/Exception.php') &&
+        is_file($manualSrc . '/PHPMailer.php') &&
+        is_file($manualSrc . '/SMTP.php')
+    ) {
+        require_once $manualSrc . '/Exception.php';
+        require_once $manualSrc . '/PHPMailer.php';
+        require_once $manualSrc . '/SMTP.php';
+    }
+
+    return class_exists('\PHPMailer\PHPMailer\PHPMailer');
+}
+
+/**
+ * Unified application email sender using PHPMailer with fallback to socket stream.
+ */
+function sendAppEmail($to, $subject, $message, $fromEmail = null, $fromName = null, $replyTo = null, &$debugOutput = null) {
+    $to = trim((string)$to);
+    if ($to === '') {
+        if ($debugOutput !== null) $debugOutput .= "Error: Recipient email is empty.\n";
         return false;
     }
 
-    $to = defined('PLATFORM_FEEDBACK_EMAIL') ? PLATFORM_FEEDBACK_EMAIL : 'univelearning01@gmail.com';
-    $fromEmail = str_replace(["\r", "\n"], '', MAIL_FROM);
-    $fromName = str_replace(["\r", "\n"], '', MAIL_FROM_NAME);
-    $replyTo = str_replace(["\r", "\n"], '', $student['Email']);
-    $subject = APP_NAME . ' student feedback';
-    $body = "A student sent feedback for " . APP_NAME . ".\n\n"
-        . "Student: " . $student['Username'] . "\n"
-        . "Email: " . $student['Email'] . "\n"
-        . "Submitted: " . date('Y-m-d H:i:s') . "\n\n"
-        . "Feedback:\n" . $feedbackMessage . "\n";
+    $fromEmail = trim((string)($fromEmail ?: MAIL_FROM));
+    if ($fromEmail === '') $fromEmail = 'univelearning01@gmail.com';
+    $fromName = trim((string)($fromName ?: MAIL_FROM_NAME));
+    if ($fromName === '') $fromName = APP_NAME;
 
-    $remote = (SMTP_SECURE === 'ssl' ? 'ssl://' : '') . SMTP_HOST . ':' . SMTP_PORT;
-    $socket = @stream_socket_client($remote, $errno, $errstr, 20, STREAM_CLIENT_CONNECT);
+    $host = SMTP_HOST ?: 'smtp.gmail.com';
+    $port = (int)(SMTP_PORT ?: 587);
+    $username = SMTP_USERNAME ?: $fromEmail;
+    $password = SMTP_PASSWORD;
+    $secure = strtolower(SMTP_SECURE ?: ($port === 465 ? 'ssl' : 'tls'));
+
+    // Check mail_config.php if password not in constants
+    if ($password === '') {
+        $mailConfigPath = __DIR__ . '/mail_config.php';
+        if (is_file($mailConfigPath)) {
+            $mc = require $mailConfigPath;
+            if (!empty($mc['password']) && $mc['password'] !== 'GOOGLE_APP_PASSWORD_HERE') {
+                $password = $mc['password'];
+                if (!empty($mc['host'])) $host = $mc['host'];
+                if (!empty($mc['port'])) $port = (int)$mc['port'];
+                if (!empty($mc['username'])) $username = $mc['username'];
+                if (!empty($mc['encryption'])) $secure = strtolower($mc['encryption']);
+            }
+        }
+    }
+
+    if ($password === '' || $password === 'GOOGLE_APP_PASSWORD_HERE') {
+        $msg = "SMTP Configuration Notice: No SMTP password configured. Please set SMTP_PASSWORD in your environment variables.";
+        error_log($msg);
+        if ($debugOutput !== null) $debugOutput .= $msg . "\n";
+        return false;
+    }
+
+    // 1. Prefer PHPMailer
+    if (loadAppPhpMailer()) {
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $host;
+            $mail->SMTPAuth = true;
+            $mail->Username = $username;
+            $mail->Password = $password;
+            $mail->Port = $port;
+            $mail->CharSet = 'UTF-8';
+            $mail->Timeout = 15;
+
+            if ($secure === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } else {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            }
+
+            if ($debugOutput !== null) {
+                $mail->SMTPDebug = 2;
+                $mail->Debugoutput = function($str) use (&$debugOutput) {
+                    $debugOutput .= $str . "\n";
+                };
+            }
+
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($to);
+            if ($replyTo) {
+                $mail->addReplyTo($replyTo);
+            }
+            $mail->Subject = $subject;
+            $mail->Body = $message;
+
+            $sent = $mail->send();
+            if ($sent && $debugOutput !== null) {
+                $debugOutput .= "Success: Email successfully accepted by SMTP server for delivery.\n";
+            }
+            return $sent;
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            $err = "PHPMailer SMTP error: " . $mail->ErrorInfo;
+            error_log($err);
+            if ($debugOutput !== null) $debugOutput .= $err . "\n";
+        } catch (Exception $e) {
+            $err = "General mailer exception: " . $e->getMessage();
+            error_log($err);
+            if ($debugOutput !== null) $debugOutput .= $err . "\n";
+        }
+    }
+
+    // 2. Fallback: socket stream
+    return sendRawSocketSmtp($to, $subject, $message, $fromEmail, $fromName, $replyTo, $host, $port, $username, $password, $secure, $debugOutput);
+}
+
+function sendRawSocketSmtp($to, $subject, $message, $fromEmail, $fromName, $replyTo, $host, $port, $username, $password, $secure, &$debugOutput = null) {
+    $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
+    $errno = 0;
+    $errstr = '';
+    $socket = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
 
     if (!$socket) {
-        error_log("Feedback SMTP connection failed: " . $errstr . " (" . $errno . ")");
+        $err = "Socket connection failed to {$remote}: {$errstr} ({$errno})";
+        error_log($err);
+        if ($debugOutput !== null) $debugOutput .= $err . "\n";
         return false;
     }
 
-    stream_set_timeout($socket, 20);
+    stream_set_timeout($socket, 15);
 
     try {
         smtpFeedbackExpect($socket, [220]);
@@ -503,7 +613,7 @@ function sendStudentFeedbackEmail($student, $feedbackMessage) {
 
         smtpFeedbackCommand($socket, 'EHLO ' . $serverName, [250]);
 
-        if (SMTP_SECURE === 'tls') {
+        if ($secure === 'tls') {
             smtpFeedbackCommand($socket, 'STARTTLS', [220]);
             if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                 throw new Exception('Could not enable SMTP TLS encryption.');
@@ -511,10 +621,10 @@ function sendStudentFeedbackEmail($student, $feedbackMessage) {
             smtpFeedbackCommand($socket, 'EHLO ' . $serverName, [250]);
         }
 
-        if (SMTP_USERNAME !== '') {
+        if ($username !== '') {
             smtpFeedbackCommand($socket, 'AUTH LOGIN', [334]);
-            smtpFeedbackCommand($socket, base64_encode(SMTP_USERNAME), [334]);
-            smtpFeedbackCommand($socket, base64_encode(SMTP_PASSWORD), [235]);
+            smtpFeedbackCommand($socket, base64_encode($username), [334]);
+            smtpFeedbackCommand($socket, base64_encode($password), [235]);
         }
 
         smtpFeedbackCommand($socket, 'MAIL FROM:<' . $fromEmail . '>', [250]);
@@ -525,25 +635,43 @@ function sendStudentFeedbackEmail($student, $feedbackMessage) {
             'Date: ' . date('r'),
             'From: ' . formatFeedbackEmailAddress($fromEmail, $fromName),
             'To: <' . $to . '>',
-            'Reply-To: <' . $replyTo . '>',
             'Subject: ' . encodeFeedbackHeader($subject),
             'MIME-Version: 1.0',
             'Content-Type: text/plain; charset=UTF-8',
             'Content-Transfer-Encoding: 8bit',
         ];
-        $message = implode("\r\n", $headers) . "\r\n\r\n" . $body;
-        $message = str_replace(["\r\n.", "\n."], ["\r\n..", "\n.."], $message);
-        fwrite($socket, str_replace("\n", "\r\n", str_replace("\r\n", "\n", $message)) . "\r\n.\r\n");
+        if ($replyTo) {
+            $headers[] = 'Reply-To: <' . $replyTo . '>';
+        }
+
+        $body = implode("\r\n", $headers) . "\r\n\r\n" . $message;
+        $body = str_replace(["\r\n.", "\n."], ["\r\n..", "\n.."], $body);
+        fwrite($socket, str_replace("\n", "\r\n", str_replace("\r\n", "\n", $body)) . "\r\n.\r\n");
 
         smtpFeedbackExpect($socket, [250]);
         smtpFeedbackCommand($socket, 'QUIT', [221]);
         fclose($socket);
         return true;
     } catch (Exception $e) {
-        error_log("Feedback SMTP send failed: " . $e->getMessage());
+        $err = "Socket SMTP failed: " . $e->getMessage();
+        error_log($err);
+        if ($debugOutput !== null) $debugOutput .= $err . "\n";
         fclose($socket);
         return false;
     }
+}
+
+function sendStudentFeedbackEmail($student, $feedbackMessage) {
+    $to = defined('PLATFORM_FEEDBACK_EMAIL') ? PLATFORM_FEEDBACK_EMAIL : 'univelearning01@gmail.com';
+    $replyTo = $student['Email'] ?? null;
+    $subject = APP_NAME . ' student feedback';
+    $body = "A student sent feedback for " . APP_NAME . ".\n\n"
+        . "Student: " . ($student['Username'] ?? 'Anonymous') . "\n"
+        . "Email: " . ($student['Email'] ?? 'N/A') . "\n"
+        . "Submitted: " . date('Y-m-d H:i:s') . "\n\n"
+        . "Feedback:\n" . $feedbackMessage . "\n";
+
+    return sendAppEmail($to, $subject, $body, null, null, $replyTo);
 }
 
 function smtpFeedbackCommand($socket, $command, array $expectedCodes) {

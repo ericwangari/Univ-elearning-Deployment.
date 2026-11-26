@@ -36,6 +36,9 @@ if (empty($current_page)) {
             <a href="?page=admin-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'admin-courses') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-book me-2"></i> <?php echo __('nav_courses'); ?>
             </a>
+            <a href="?page=admin-smtp-test" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'admin-smtp-test') ? 'active bg-primary' : ''; ?>">
+                <i class="bi bi-envelope-check me-2"></i> SMTP & Email
+            </a>
         <?php elseif ($user_type === 'Instructor'): ?>
             <a href="?page=manage-courses" class="list-group-item list-group-item-action bg-dark text-white border-0 py-3 rounded mb-1 <?php echo ($current_page == 'manage-courses') ? 'active bg-primary' : ''; ?>">
                 <i class="bi bi-journal-text me-2"></i> <?php echo __('nav_my_courses'); ?>

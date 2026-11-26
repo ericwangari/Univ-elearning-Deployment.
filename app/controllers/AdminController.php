@@ -500,4 +500,34 @@ class AdminController {
         $stmt->execute([$courseName, $description, $department]);
         return $this->pdo->lastInsertId();
     }
+
+    public function smtpTest() {
+        requireRole('Admin');
+
+        $result = null;
+        $testEmail = trim($_POST['test_email'] ?? '');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $testEmail !== '') {
+            $subject = 'Univ E-Learning: SMTP Test Email';
+            $message = "Hello,\n\n"
+                . "This is an automated test email sent from the Univ E-Learning Admin Dashboard on " . date('Y-m-d H:i:s') . ".\n\n"
+                . "If you are receiving this message, your SMTP configuration is 100% active and working properly!\n\n"
+                . "Settings Used:\n"
+                . "- Host: " . (SMTP_HOST ?: 'smtp.gmail.com') . "\n"
+                . "- Port: " . (SMTP_PORT ?: 587) . "\n"
+                . "- Security: " . (SMTP_SECURE ?: 'tls') . "\n"
+                . "- Sender: " . (MAIL_FROM ?: 'univelearning01@gmail.com') . "\n";
+
+            $debugOutput = '';
+            $sent = sendAppEmail($testEmail, $subject, $message, null, null, null, $debugOutput);
+
+            $result = [
+                'success' => $sent,
+                'email'   => $testEmail,
+                'debug'   => $debugOutput,
+            ];
+        }
+
+        require __DIR__ . '/../views/admin/smtp_test.php';
+    }
 }

@@ -29,6 +29,18 @@ $periodPendingInstructors = $periodStats['pending_instructors'] ?? 0;
 ?>
 
 <div class="row g-4 mb-4">
+    <?php if (!defined('SMTP_PASSWORD') || SMTP_PASSWORD === '' || SMTP_PASSWORD === 'GOOGLE_APP_PASSWORD_HERE'): ?>
+    <div class="col-12">
+        <div class="alert alert-info border-0 shadow-sm d-flex justify-content-between align-items-center mb-0">
+            <div>
+                <i class="bi bi-envelope-exclamation me-2"></i>
+                <strong>SMTP Notice:</strong> Add your 16-character <code>SMTP_PASSWORD</code> (Google App Password) in Vercel to enable student email OTP verification and password resets.
+            </div>
+            <a href="?page=admin-smtp-test" class="btn btn-primary btn-sm fw-bold">Test & Configure</a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if ($pendingInstructors > 0): ?>
     <div class="col-12">
         <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-0">

@@ -700,11 +700,7 @@ class AuthController {
     }
 
     private function sendConfiguredEmail($to, $subject, $message, $fromEmail, $fromName) {
-        if (SMTP_HOST !== '') {
-            return $this->sendSmtpEmail($to, $subject, $message, $fromEmail, $fromName);
-        }
-
-        return $this->sendPhpMailerEmail($to, $subject, $message);
+        return sendAppEmail($to, $subject, $message, $fromEmail, $fromName);
     }
 
     private function sendPhpMailerEmail($to, $subject, $message) {

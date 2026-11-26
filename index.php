@@ -154,6 +154,11 @@ switch ($page) {
         $adminCtrl->allResults();
         break;
 
+    case 'admin-smtp-test':
+        if (!isLoggedIn()) redirect('?page=login');
+        $adminCtrl->smtpTest();
+        break;
+
     case 'admin-users':
     case 'manage-users': // Alias
         if (!isLoggedIn()) redirect('?page=login');
